@@ -1,15 +1,33 @@
-import Image from "next/image";
+"use client";
+
 import { Inter } from "next/font/google";
-import styles from "./page.module.css";
+import { useRouter } from "next/navigation";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export default function Home() {
+  const handleTestRoute = async () => {
+    try {
+      const response = await fetch("/api/testroute", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ msg: "ciao" }),
+      });
+      const testRouteResponse = await response.json();
+      console.log("testRouteResponse", testRouteResponse);
+    } catch (error) {
+      alert(error.message);
+    }
+  };
   return (
     <main>
-      <div className="p-4">
-        <h1 className="text-3xl font-bold underline">Hello world!</h1>
-      </div>
+      <h1 className="text-2xl font-bold underline">
+        Home page of the application, i will render this page when the user is
+        not signed in.
+      </h1>
+      <button onClick={handleTestRoute}>handleTestRoute</button>
     </main>
   );
 }
