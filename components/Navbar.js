@@ -10,6 +10,7 @@ export default function Navbar() {
   if (user) {
     return (
       <div className="flex justify-between p-2 bg-blue-400">
+        <Link href="/">Logo</Link>
         <Link href="/main">Main</Link>
         <span>{user.email}</span>
       </div>

@@ -1,8 +1,9 @@
 // import * as firebase from "firebase";
 import { initializeApp } from "firebase/app";
-import { getAuth, GoogleAuthProvider, OAuthProvider } from "firebase/auth";
+import { getAuth } from "firebase/auth";
 import { useEffect } from "react";
 import { useAuthState } from "react-firebase-hooks/auth";
+import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -15,16 +16,8 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-// if (firebase.apps.length === 0) {
-//   const app = firebase.initializeApp(firebaseConfig);
-// }
 const auth = getAuth(app);
-const googleProvider = new GoogleAuthProvider();
-const microsoftProvider = new OAuthProvider("microsoft.com");
-// .setCustomParameters({
-//   prompt: "consent",
-//   tenant: process.env.NEXT_PUBLIC_MICROSOFT_TENANT_ID,
-// });
+const db = getFirestore(app);
 
 function useAuth() {
   const [user, loading, error] = useAuthState(auth);
@@ -38,4 +31,11 @@ function useAuth() {
   return { user, loading };
 }
 
-export { auth, googleProvider, microsoftProvider, useAuth };
+export { auth, useAuth, db };
+
+// const googleProvider = new GoogleAuthProvider();
+// const microsoftProvider = new OAuthProvider("microsoft.com");
+// .setCustomParameters({
+//   prompt: "consent",
+//   tenant: process.env.NEXT_PUBLIC_MICROSOFT_TENANT_ID,
+// });
