@@ -5,8 +5,11 @@ import { Inter } from "next/font/google";
 import { auth, useAuth, db } from "@/firebase";
 import { signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
-import { collection } from "firebase/firestore";
-import { useCollectionData } from "react-firebase-hooks/firestore";
+import { collection, serverTimestamp, addDoc } from "firebase/firestore";
+import {
+  useCollection,
+  useCollectionData,
+} from "react-firebase-hooks/firestore";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -15,24 +18,19 @@ function Main() {
   const router = useRouter();
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const [label, setLabel] = useState("");
+  const [selectedLabel, setSelectedLabel] = useState("");
+  const [newLabel, setNewLabel] = useState("");
 
-  //! to test if it works orginally it was const [notes, loading, error] i changed it for conflicts with useAuth.
   const [notes, notesLoading, notesError] = useCollectionData(
     collection(db, `users/${user?.uid}/notes`),
-    {
-      snapshotListenOptions: { includeMetadataChanges: true },
-    }
+    { idField: "id", snapshotListenOptions: { includeMetadataChanges: true } }
   );
 
-  const handleSignOut = async () => {
-    try {
-      await signOut(auth);
-      console.log("user signed out");
-    } catch (error) {
-      console.error(error);
-    }
-  };
+  // fetch labels
+  const [labels] = useCollectionData(
+    collection(db, `users/${user?.uid}/labels`),
+    { idField: "id" }
+  );
 
   if (authLoading) {
     // Show loading spinner or something similar
@@ -44,15 +42,72 @@ function Main() {
     return null;
   }
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    console.log("Title:", title);
-    console.log("Content:", content);
-    console.log("Label:", label);
-    // TODO: Save note to database
-    setTitle("");
-    setContent("");
-    setLabel("");
+  if (notesError) {
+    console.error(notesError);
+  }
+  if (!notesLoading && notes) {
+    notes.map((doc) => console.log(doc));
+  }
+
+  const handleSignOut = async () => {
+    try {
+      await signOut(auth);
+      console.log("user signed out");
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  // const handleSubmit = async (event) => {
+  //   event.preventDefault();
+  //   if (!title || !content || !label) return;
+  //   try {
+  //     const note = {
+  //       title,
+  //       content,
+  //       label,
+  //       created_at: serverTimestamp(),
+  //       updated_at: serverTimestamp(),
+  //     };
+  //     await addDoc(collection(db, `users/${user?.uid}/notes`), note);
+  //     setTitle("");
+  //     setContent("");
+  //     setLabel("");
+  //   } catch (error) {
+  //     console.error(error);
+  //   }
+  // };
+
+  const handleSaveNote = async (event) => {
+    event.preventDefault();
+    try {
+      const noteRef = await addDoc(collection(db, `users/${user?.uid}/notes`), {
+        title,
+        content,
+        label: selectedLabel || null,
+        created_at: serverTimestamp(),
+        updated_at: serverTimestamp(),
+      });
+      console.log("Note added with ID: ", noteRef.id);
+      setTitle("");
+      setContent("");
+      setSelectedLabel("");
+    } catch (error) {
+      console.error("Error adding note: ", error);
+    }
+  };
+
+  const handleCreateLabel = async (event) => {
+    event.preventDefault();
+    try {
+      await addDoc(collection(db, `users/${user?.uid}/labels`), {
+        name: newLabel,
+      });
+      console.log("Label created: ", newLabel);
+      setNewLabel("");
+    } catch (error) {
+      console.error("Error creating label: ", error);
+    }
   };
 
   const handleCancel = (e) => {
@@ -64,7 +119,7 @@ function Main() {
 
   return (
     <div className="p-4">
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSaveNote}>
         <div className="mb-4">
           <label htmlFor="title" className="block text-gray-700 font-bold mb-2">
             Title
@@ -92,7 +147,7 @@ function Main() {
             rows="3"
           ></textarea>
         </div>
-        <div className="mb-4">
+        {/* <div className="mb-4">
           <label htmlFor="label" className="block text-gray-700 font-bold mb-2">
             Label
           </label>
@@ -107,6 +162,33 @@ function Main() {
             <option value="work">Work</option>
             <option value="study">Study</option>
           </select>
+        </div> */}
+        <div className="mb-4">
+          <label className="block text-gray-700 font-bold mb-2">Label:</label>
+          {labels && (
+            <select
+              className="w-full px-3 py-2 border rounded"
+              value={selectedLabel}
+              onChange={(event) => setSelectedLabel(event.target.value)}
+            >
+              <option value="">-- Select label --</option>
+              {labels.map((label) => (
+                <option key={label.id} value={label.name}>
+                  {label.name}
+                </option>
+              ))}
+            </select>
+          )}
+          <button onClick={() => setSelectedLabel("")}>Clear</button>
+        </div>
+        <div>
+          <label>Create label:</label>
+          <input
+            type="text"
+            value={newLabel}
+            onChange={(event) => setNewLabel(event.target.value)}
+          />
+          <button onClick={handleCreateLabel}>Create</button>
         </div>
         <div className="flex justify-end">
           <button
