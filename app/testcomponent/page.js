@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import TextareaAutosize from "react-textarea-autosize";
 
-const NoteTakingApp = () => {
+const CreateNote = () => {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
 
@@ -62,9 +62,6 @@ const NoteTakingApp = () => {
   };
 
   const addLabel = () => {
-    // setLabels([...labels, { name: currentLabel, checked: true }]);
-    // setCurrentLabel("");
-    // setSearchTerm("");
     const newLabel = { name: currentLabel, checked: true };
     setLabels([...labels, newLabel]);
     setSelectedLabels([...selectedLabels, currentLabel]);
@@ -119,7 +116,6 @@ const NoteTakingApp = () => {
           onChange={(e) => setTitle(e.target.value)}
           className="w-full p-2 mb-0 focus:border-none focus:ring-0 textarea-title"
           placeholder="Add title"
-          // autoComplete="off"
           autoComplete="no-autocomplete-please"
           maxLength={100}
         />
@@ -133,22 +129,20 @@ const NoteTakingApp = () => {
         minRows={3}
       ></TextareaAutosize>
       <div className="flex flex-wrap items-center gap-1 p-1">
-        {selectedLabels.map((label) => (
+        {selectedLabels.map((labelName) => (
           <div
-            key={label}
-            className="flex items-center bg-gray-200 rounded px-2 py-1"
+            key={labelName}
+            className="relative flex items-center bg-gray-200 rounded px-2 py-1 group"
+            style={{ minWidth: "max-content" }}
           >
-            <span
-              // key={label}
-              className="px-2 py-0.5 text-sm text-gray-700 bg-gray-200 rounded-full"
-            >
-              {label}
+            <span className="px-2 py-0.5 text-sm text-gray-700 bg-gray-200 rounded-full truncate transition-all duration-200 group-hover:mr-4">
+              {labelName}
             </span>
             <button
-              className="ml-1 focus:outline-none"
+              className="absolute right-0 mr-1 focus:outline-none opacity-0 group-hover:opacity-100 transition-opacity duration-200"
               onClick={(e) => {
                 e.stopPropagation();
-                toggleLabel(label);
+                toggleLabel(labelName);
               }}
             >
               <svg
@@ -156,21 +150,17 @@ const NoteTakingApp = () => {
                 width="16"
                 height="16"
                 viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="feather feather-x-circle"
               >
-                <circle cx="12" cy="12" r="10"></circle>
-                <line x1="15" y1="9" x2="9" y2="15"></line>
-                <line x1="9" y1="9" x2="15" y2="15"></line>
+                <path
+                  fill="currentColor"
+                  d="M6.4 19L5 17.6l5.6-5.6L5 6.4L6.4 5l5.6 5.6L17.6 5L19 6.4L13.4 12l5.6 5.6l-1.4 1.4l-5.6-5.6L6.4 19Z"
+                />
               </svg>
             </button>
           </div>
         ))}
       </div>
+
       {showTitleAndButtons && (
         <div className="flex justify-between w-full">
           <div>
@@ -205,23 +195,13 @@ const NoteTakingApp = () => {
 
           <div>
             <button
-              className="py-1 px-2 mr-2 bg-white rounded hover:bg-gray-100"
-              onClick={
-                //   () => {
-                //   setTitle("");
-                //   setContent("");
-                //   setLabels(
-                //     labels.map((label) => ({ ...label, checked: false }))
-                //   );
-                //   setShowTitleAndButtons(false);
-                // }
-                handleCancel
-              }
+              className="py-1 px-2 mr-2 bg-white rounded hover:bg-gray-100 font-medium"
+              onClick={handleCancel}
             >
               Cancel
             </button>
             <button
-              className={`py-1 px-2 bg-white rounded  ${
+              className={`py-1 px-2 bg-white rounded font-medium  ${
                 saveButtonDisabled
                   ? "opacity-50 cursor-not-allowed hover:bg-white hover:text-gray-black"
                   : "hover:bg-blue-100 hover:text-blue-700"
@@ -302,4 +282,4 @@ const NoteTakingApp = () => {
   );
 };
 
-export default NoteTakingApp;
+export default CreateNote;

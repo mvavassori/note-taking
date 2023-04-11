@@ -7,6 +7,10 @@ import { useAuth } from "@/firebase";
 export default function Navbar() {
   const { user, loading } = useAuth();
 
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
   if (user) {
     return (
       <div className="flex justify-between p-2 bg-blue-400">
