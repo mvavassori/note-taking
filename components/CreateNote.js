@@ -208,7 +208,7 @@ export default function CreateNote() {
   return (
     <div
       ref={containerRef}
-      className="relative p-2 max-w-lg mx-auto border-2 border-gray-600 rounded-lg mt-8 shadow-xl"
+      className="relative p-2 max-w-lg mx-auto border-2 border-zinc-500 rounded-lg mt-8 shadow-xl bg-zinc-50"
     >
       {showTitleAndButtons && (
         <input
@@ -217,7 +217,7 @@ export default function CreateNote() {
           name="title"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          className="w-full p-2 mb-0 focus:border-none focus:ring-0 textarea-title font-semibold"
+          className="w-full p-2 mb-0 focus:border-none focus:ring-0 textarea-title font-semibold bg-zinc-50"
           placeholder="Add title"
           autoComplete="no-autocomplete-please"
           maxLength={100}
@@ -227,19 +227,20 @@ export default function CreateNote() {
         ref={textAreaRef}
         value={content}
         onChange={(e) => setContent(e.target.value)}
-        className="w-full p-2 focus:border-none focus:ring-0 textarea-content resize-none font-bold"
+        className="w-full p-2 focus:border-none focus:ring-0 textarea-content resize-none font-semibold bg-zinc-50"
         placeholder="Take a note..."
         minRows={3}
+        autoComplete="no-autocomplete-please"
       ></TextareaAutosize>
       {showTitleAndButtons && (
         <div className="flex flex-wrap items-center gap-1 p-1">
           {selectedLabels.map((labelName) => (
             <div
               key={labelName}
-              className="relative flex items-center bg-gray-200 rounded px-2 py-1 group"
+              className="relative flex items-center bg-zinc-200 rounded px-2 py-1 group"
               style={{ minWidth: "max-content" }}
             >
-              <span className="px-2 py-0.5 text-sm text-gray-700 bg-gray-200 rounded-full truncate transition-all duration-200 group-hover:mr-4">
+              <span className="px-2 py-0.5 text-sm text-zinc-800 bg-zinc-200 rounded-full truncate transition-all duration-200 group-hover:mr-4">
                 {labelName}
               </span>
               <button
@@ -269,8 +270,8 @@ export default function CreateNote() {
         <div className="flex justify-between w-full">
           <div>
             <button
-              className={`px-2 rounded-full hover:bg-gray-100 ${
-                showModal ? "bg-gray-100" : ""
+              className={`px-2 rounded-full hover:bg-zinc-100 ${
+                showModal ? "bg-zinc-100" : ""
               }`}
               onClick={() => setShowModal(!showModal)}
               onMouseEnter={() => setShowTooltip(true)}
@@ -289,7 +290,7 @@ export default function CreateNote() {
               </svg>
             </button>
             <div
-              className={`absolute py-1 px-2 text-xs text-white bg-gray-700 rounded ${
+              className={`absolute py-1 px-2 text-xs text-white bg-zinc-700 rounded ${
                 showTooltip ? "opacity-100" : "opacity-0"
               } transition ease-in-out duration-200`}
             >
@@ -299,7 +300,7 @@ export default function CreateNote() {
 
           <div>
             <button
-              className="py-1 px-2 mr-2 bg-white rounded hover:bg-gray-100 font-semibold text-gray-800"
+              className="py-1 px-2 mr-2 bg-zinc-50 rounded hover:bg-zinc-200 font-semibold text-zinc-800"
               onClick={handleCancel}
             >
               Cancel
@@ -307,8 +308,8 @@ export default function CreateNote() {
             <button
               className={`py-1 px-2 bg-white rounded font-semibold  ${
                 saveButtonDisabled
-                  ? "opacity-50 cursor-not-allowed hover:bg-white text-gray-800"
-                  : "hover:bg-blue-100 hover:text-blue-700"
+                  ? "opacity-50 cursor-not-allowed bg-zinc-50 hover:bg-zinc-50 text-zinc-800"
+                  : "bg-zinc-50 hover:bg-blue-100 hover:text-blue-700"
               }`}
               onClick={saveNote}
               disabled={saveButtonDisabled}
@@ -321,12 +322,12 @@ export default function CreateNote() {
       {showModal && (
         <div
           ref={modalRef}
-          className="absolute z-10 w-64 p-2 bg-white border border-gray-300 rounded shadow-xl overflow-y-auto max-h-64"
+          className="absolute z-10 w-64 p-2 bg-zinc-50 border border-zinc-300 rounded shadow-xl overflow-y-auto max-h-64"
         >
           <p className="text-xs pb-2">Assign a label to the note</p>
           <input
             type="text"
-            className="w-full p-1 mb-2 border border-gray-300 rounded text-sm"
+            className="w-full p-1 mb-2 border border-zinc-300 rounded text-sm"
             placeholder="Search or create labels"
             value={searchTerm}
             onChange={handleSearchChange}
@@ -336,7 +337,7 @@ export default function CreateNote() {
             {filteredLabels.map(({ name: labelName, checked }) => (
               <div
                 key={labelName}
-                className="flex items-center mb-1 p-0.5 hover:bg-gray-100 cursor-pointer text-sm"
+                className="flex items-center mb-1 p-0.5 hover:bg-zinc-100 cursor-pointer text-sm"
                 onClick={() => toggleLabel(labelName)}
               >
                 <input
@@ -362,7 +363,7 @@ export default function CreateNote() {
           </div>
           {!labelExists && searchTerm !== "" && (
             <button
-              className="w-full p-2 mt-2 text-sm bg-gray-200 hover:bg-gray-300 rounded text-left flex items-center justify-start"
+              className="w-full p-2 mt-2 text-sm bg-zinc-200 hover:bg-zinc-300 rounded text-left flex items-center justify-start"
               onClick={addLabel}
             >
               <svg

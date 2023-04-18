@@ -13,6 +13,7 @@ import {
 } from "firebase/firestore";
 import { useCollectionData } from "react-firebase-hooks/firestore";
 import CreateNote from "@/components/CreateNote";
+import Sidebar from "@/components/Sidebar";
 
 //used to get document ids of the labels
 const myConverter = {
@@ -46,24 +47,9 @@ function Main() {
   const [notesData] = useCollectionData(notesRef);
 
   const router = useRouter();
-  // const [title, setTitle] = useState("");
-  // const [content, setContent] = useState("");
   const [labels, setLabels] = useState([]);
   const [notes, setNotes] = useState([]);
   const [notesWithLabelNames, setNotesWithLabelNames] = useState([]);
-
-  // const [showTitleAndButtons, setShowTitleAndButtons] = useState(false);
-  // const [showModal, setShowModal] = useState(false);
-  // const [searchTerm, setSearchTerm] = useState("");
-  // const [labelExists, setLabelExists] = useState(false);
-  // const [showTooltip, setShowTooltip] = useState(false);
-  // const [saveButtonDisabled, setSaveButtonDisabled] = useState(true);
-  // const [selectedLabels, setSelectedLabels] = useState([]);
-
-  // const modalRef = useRef();
-  // const titleInputRef = useRef();
-  // const textAreaRef = useRef();
-  // const containerRef = useRef();
 
   const getNoteWithLabelNames = useCallback(
     (note) => {
@@ -129,69 +115,65 @@ function Main() {
   };
 
   return (
-    <div>
-      <CreateNote />
-      <div className="my-12">
-        {notesWithLabelNames?.map((note) => (
-          <div key={note.id} className="bg-white p-4 rounded shadow mb-4">
-            {/* Note title */}
-            {note.title && (
-              <h3 className="text-lg font-semibold mb-2">{note.title}</h3>
-            )}
-
-            {/* Note content */}
-            <p className="text-gray-700 mb-2">{note.content}</p>
-
-            {/* Note labels */}
-            <div className="flex flex-wrap">
-              {note.labels.map((labelName) => (
-                <div
-                  key={labelName}
-                  className="relative flex items-center bg-gray-200 rounded px-2 py-1 mr-2 mb-2 group"
-                >
-                  <span className="px-2 py-0.5 text-sm text-gray-700 bg-gray-200 rounded-full truncate transition-all duration-200 group-hover:mr-4">
-                    {labelName}
-                  </span>
-                  <button
-                    className="absolute right-0 mr-1 focus:outline-none opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      removeLabelFromNote(note.id, labelName);
-                    }}
+    <div className="flex bg-zinc-900 px-2">
+      <Sidebar labels={labelsData} />
+      <div className="w-4/5 ml-1-5-vw">
+        <CreateNote />
+        <div className="my-12">
+          {notesWithLabelNames?.map((note) => (
+            <div key={note.id} className="bg-white p-4 rounded shadow mb-4">
+              {/* Note title */}
+              {note.title && (
+                <h3 className="text-lg font-semibold mb-2">{note.title}</h3>
+              )}
+              {/* Note content */}
+              <p className="text-gray-700 mb-2 overflow-hidden whitespace-nowrap overflow-ellipsis">
+                {note.content}
+              </p>
+              {/* Note labels */}
+              <div className="flex flex-wrap">
+                {note.labels.map((labelName) => (
+                  <div
+                    key={labelName}
+                    className="relative flex items-center bg-gray-200 rounded px-2 py-1 mr-2 mb-2 group"
                   >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
+                    <span className="px-2 py-0.5 text-sm text-gray-700 bg-gray-200 rounded-full truncate transition-all duration-200 group-hover:mr-4">
+                      {labelName}
+                    </span>
+                    <button
+                      className="absolute right-0 mr-1 focus:outline-none opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeLabelFromNote(note.id, labelName);
+                      }}
                     >
-                      <path
-                        fill="currentColor"
-                        d="M6.4 19L5 17.6l5.6-5.6L5 6.4L6.4 5l5.6 5.6L17.6 5L19 6.4L13.4 12l5.6 5.6l-1.4 1.4l-5.6-5.6L6.4 19Z"
-                      />
-                    </svg>
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
-      <div className="my-24">
-        <button className="bg-red-400" onClick={handleSignOut}>
-          Sign Out
-        </button>
-        <button className="bg-green-400" onClick={getNotes}>
-          getNotes
-        </button>
-      </div>
-      <div>
-        {labelsData &&
-          labelsData.map((label) => (
-            <div key={label.id} className="p-1 bg-gray-200 rounded">
-              {label.name}
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          fill="currentColor"
+                          d="M6.4 19L5 17.6l5.6-5.6L5 6.4L6.4 5l5.6 5.6L17.6 5L19 6.4L13.4 12l5.6 5.6l-1.4 1.4l-5.6-5.6L6.4 19Z"
+                        />
+                      </svg>
+                    </button>
+                  </div>
+                ))}
+              </div>
             </div>
           ))}
+        </div>
+
+        <div className="my-24">
+          <button className="bg-red-400" onClick={handleSignOut}>
+            Sign Out
+          </button>
+          <button className="bg-green-400" onClick={getNotes}>
+            getNotes
+          </button>
+        </div>
       </div>
     </div>
   );

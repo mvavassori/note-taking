@@ -17,9 +17,9 @@ const roboto = Roboto({
 export default function RootLayout({ children }) {
   return (
     <html lang="en" className={roboto.className}>
-      <body>
+      <body className="min-h-screen flex flex-col">
         <Navbar />
-        {children}
+        <div className="w-full flex-grow pt-16 bg-zinc-900">{children}</div>
       </body>
     </html>
   );

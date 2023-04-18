@@ -6,6 +6,60 @@
 .textarea-content:focus {
   outline: none;
 }
+
+/*SCROLL BAR*/
+
+/* For WebKit browsers (Chrome, Safari, Edge) */
+body::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+body::-webkit-scrollbar-track {
+  background-color: #3f3f46; /* zinc-900 */
+}
+
+body::-webkit-scrollbar-thumb {
+  background-color: #52525b;
+}
+
+body::-webkit-scrollbar-thumb:hover {
+  background-color: #71717a; /* Adjust the color and opacity to your preference */
+}
+
+/* Custom scrollbar for the aside element */
+aside::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+aside::-webkit-scrollbar-track {
+  background-color: #27272a; /* Customize the track color */
+}
+
+aside::-webkit-scrollbar-thumb {
+  background-color: #52525b; /* Customize the thumb color */
+}
+
+aside::-webkit-scrollbar-thumb:hover {
+  background-color: #71717a; /* Customize the thumb:hover color */
+}
+
+/* For Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #52525b #3f3f46; /* zinc-900 */
+}
+
+*:-moz-any([hover], [active], [focus], [focus-within]) {
+  scrollbar-color: #71717a #3f3f46; /* Adjust the color and opacity to your preference */
+}
+
+/*margin to leave for the Siebar*/
+.ml-1-5-vw {
+  margin-left: 20vw;
+}
+
 /* :root {
   --max-width: 1100px;
   --border-radius: 12px;
