@@ -4,16 +4,11 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { auth, useAuth, db } from "@/firebase";
 import { signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
-import {
-  serverTimestamp,
-  addDoc,
-  collection,
-  query,
-  orderBy,
-} from "firebase/firestore";
+import { collection, query, orderBy } from "firebase/firestore";
 import { useCollectionData } from "react-firebase-hooks/firestore";
 import CreateNote from "@/components/CreateNote";
 import Sidebar from "@/components/Sidebar";
+import NoteModal from "@/components/NoteModal";
 
 //used to get document ids of the labels
 const myConverter = {
@@ -50,6 +45,8 @@ function Main() {
   const [labels, setLabels] = useState([]);
   const [notes, setNotes] = useState([]);
   const [notesWithLabelNames, setNotesWithLabelNames] = useState([]);
+  const [showNoteModal, setShowNoteModal] = useState(false);
+  const [currentNote, setCurrentNote] = useState({});
 
   const getNoteWithLabelNames = useCallback(
     (note) => {
@@ -116,12 +113,19 @@ function Main() {
 
   return (
     <div className="flex bg-zinc-900 px-2">
-      <Sidebar labels={labelsData} />
+      <Sidebar labelsData={labelsData} />
       <div className="w-4/5 ml-1-5-vw">
-        <CreateNote />
+        <CreateNote labelsData={labelsData} />
         <div className="my-12">
           {notesWithLabelNames?.map((note) => (
-            <div key={note.id} className="bg-white p-4 rounded shadow mb-4">
+            <div
+              key={note.id}
+              onClick={() => {
+                setCurrentNote(note);
+                setShowNoteModal(true);
+              }}
+              className="bg-white p-4 rounded shadow mb-4"
+            >
               {/* Note title */}
               {note.title && (
                 <h3 className="text-lg font-semibold mb-2">{note.title}</h3>
@@ -175,6 +179,12 @@ function Main() {
           </button>
         </div>
       </div>
+      <NoteModal
+        showNoteModal={showNoteModal}
+        setShowNoteModal={setShowNoteModal}
+        currentNote={currentNote}
+        labelsData={labelsData}
+      />
     </div>
   );
 }

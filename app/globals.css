@@ -60,6 +60,12 @@ aside::-webkit-scrollbar-thumb:hover {
   margin-left: 20vw;
 }
 
+/*TextareaAutosize max height for the NoteModal component*/
+.textarea-content-limited {
+  max-height: 45vh; /* Set the maximum height as per your requirements */
+  overflow-y: auto;
+}
+
 /* :root {
   --max-width: 1100px;
   --border-radius: 12px;

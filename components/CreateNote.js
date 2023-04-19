@@ -1,39 +1,19 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth, db } from "@/firebase";
-import {
-  serverTimestamp,
-  addDoc,
-  collection,
-  query,
-  orderBy,
-} from "firebase/firestore";
-import { useCollectionData } from "react-firebase-hooks/firestore";
+import { serverTimestamp, addDoc, collection } from "firebase/firestore";
 import TextareaAutosize from "react-textarea-autosize";
 
-//used to get document ids of the labels
-const myConverter = {
-  toFirestore(label) {
-    return {
-      name: label.name,
-    };
-  },
-  fromFirestore(snapshot, options) {
-    const data = snapshot.data(options);
-    return {
-      id: snapshot.id,
-      name: data.name,
-    };
-  },
+// used to extract links from the note's content
+const extractLinks = (noteContent) => {
+  const urlPattern = /((https?:\/\/)|(www\.))[^\s]+/gi;
+  const links = noteContent.match(urlPattern) || [];
+  return links;
 };
-export default function CreateNote() {
-  const { user } = useAuth();
 
-  const labelsRef = collection(db, `users/${user?.uid}/labels`).withConverter(
-    myConverter
-  );
-  const [labelsData] = useCollectionData(labelsRef);
+export default function CreateNote({ labelsData }) {
+  const { user } = useAuth();
 
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
@@ -97,19 +77,6 @@ export default function CreateNote() {
     }
   }, [labelsData]);
 
-  //   useEffect(() => {
-  //     if (notesData) {
-  //       setNotes(notesData);
-  //     }
-  //   }, [notesData]);
-
-  //   useEffect(() => {
-  //     if (notesData && labelsData) {
-  //       const updatedNotesWithLabelNames = notesData.map(getNoteWithLabelNames);
-  //       setNotesWithLabelNames(updatedNotesWithLabelNames);
-  //     }
-  //   }, [notesData, labelsData, getNoteWithLabelNames]);
-
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value);
     setLabelExists(
@@ -156,15 +123,18 @@ export default function CreateNote() {
 
   const saveNote = async () => {
     // Fetch the label document IDs for the selected labels
-
     console.log(labelsData);
     const selectedLabelIds = labels
       .filter((label) => selectedLabels.includes(label.name))
       .map((label) => label.id);
 
+    // Extract links from the content
+    const links = extractLinks(content);
+
     const newNote = {
       title,
       content,
+      links,
       labels: selectedLabelIds,
       created_at: serverTimestamp(),
       updated_at: serverTimestamp(),
@@ -178,6 +148,7 @@ export default function CreateNote() {
         title,
         content,
         labels: selectedLabelIds,
+        links,
         created_at: serverTimestamp(),
         updated_at: serverTimestamp(),
       });
