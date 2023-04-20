@@ -4,14 +4,21 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { auth, useAuth, db } from "@/firebase";
 import { signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
-import { collection, query, orderBy } from "firebase/firestore";
+import {
+  collection,
+  query,
+  orderBy,
+  doc,
+  updateDoc,
+  serverTimestamp,
+} from "firebase/firestore";
 import { useCollectionData } from "react-firebase-hooks/firestore";
 import CreateNote from "@/components/CreateNote";
 import Sidebar from "@/components/Sidebar";
 import NoteModal from "@/components/NoteModal";
 
 //used to get document ids of the labels
-const myConverter = {
+const labelsConverter = {
   toFirestore(label) {
     return {
       name: label.name,
@@ -26,17 +33,43 @@ const myConverter = {
   },
 };
 
+//used to get document ids of the labels
+const notesConverter = {
+  toFirestore(note) {
+    return {
+      title: note.title,
+      content: note.content,
+      labels: note.labels,
+      links: note.links,
+      created_at: note.created_at,
+      updated_at: note.updated_at,
+    };
+  },
+  fromFirestore(snapshot, options) {
+    const data = snapshot.data(options);
+    return {
+      id: snapshot.id,
+      title: data.title,
+      content: data.content,
+      labels: data.labels,
+      links: data.links,
+      created_at: data.created_at,
+      updated_at: data.updated_at,
+    };
+  },
+};
+
 function Main() {
   const { user, loading: authLoading } = useAuth();
 
   const labelsRef = collection(db, `users/${user?.uid}/labels`).withConverter(
-    myConverter
+    labelsConverter
   );
   const [labelsData] = useCollectionData(labelsRef);
 
   // Fetch notes with label IDs
   const notesRef = query(
-    collection(db, `users/${user?.uid}/notes`),
+    collection(db, `users/${user?.uid}/notes`).withConverter(notesConverter),
     orderBy("updated_at", "desc")
   );
   const [notesData] = useCollectionData(notesRef);
@@ -57,6 +90,7 @@ function Main() {
         .filter((labelName) => labelName !== undefined);
 
       return {
+        id: note.id,
         ...note,
         labels: labelNames,
       };
@@ -92,6 +126,17 @@ function Main() {
     console.log(notes);
   };
 
+  const updateNote = async (updatedNote) => {
+    const noteRef = doc(db, `users/${user?.uid}/notes`, updatedNote.id);
+    const updatedData = {
+      title: updatedNote.title,
+      content: updatedNote.content,
+      labels: updatedNote.labels,
+      updated_at: serverTimestamp(),
+    };
+    await updateDoc(noteRef, updatedData);
+  };
+
   if (authLoading) {
     // Show loading spinner or something similar
     return <div>Loading...</div>;
@@ -121,6 +166,7 @@ function Main() {
             <div
               key={note.id}
               onClick={() => {
+                console.log(note.id);
                 setCurrentNote(note);
                 setShowNoteModal(true);
               }}
@@ -184,6 +230,7 @@ function Main() {
         setShowNoteModal={setShowNoteModal}
         currentNote={currentNote}
         labelsData={labelsData}
+        onUpdateNote={updateNote}
       />
     </div>
   );
