@@ -1,7 +1,9 @@
 "use client";
 
+import { useAuth, db } from "@/firebase";
 import { useRef, useState, useEffect } from "react";
 import TextareaAutosize from "react-textarea-autosize";
+import { addDoc, collection } from "firebase/firestore";
 
 const NoteModal = ({
   showNoteModal,
@@ -9,16 +11,18 @@ const NoteModal = ({
   currentNote,
   onUpdateNote,
   labelsData,
+  currentNoteLabelObjects,
 }) => {
+  const { user } = useAuth();
+
   const [editedTitle, setEditedTitle] = useState("");
   const [editedContent, setEditedContent] = useState("");
-  const [editedLabels, setEditedLabels] = useState([]);
-  const [labels, setLabels] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [labelExists, setLabelExists] = useState(false);
-  const [selectedLabels, setSelectedLabels] = useState([]);
+  const [selectedLabels, setSelectedLabels] = useState(currentNoteLabelObjects);
   const [showLabelsModal, setShowLabelsModal] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
+  const [initialLabels, setInitialLabels] = useState([]);
 
   const modalContainerRef = useRef();
   const modalLabelsRef = useRef();
@@ -27,30 +31,24 @@ const NoteModal = ({
     if (currentNote) {
       setEditedTitle(currentNote.title || "");
       setEditedContent(currentNote.content || "");
-      setEditedLabels(currentNote.labels || []);
     }
     console.log(currentNote.labels);
   }, [currentNote]);
 
   useEffect(() => {
+    console.log("currentNote:", currentNote);
+    console.log("labelsData:", labelsData);
+
     if (currentNote && currentNote.labels && labelsData) {
-      const noteLabels = currentNote.labels
-        .map((labelId) => labelsData.find((label) => label.id === labelId))
-        .filter(Boolean);
+      const noteLabels = currentNote.labels.map((labelName) => {
+        const label = labelsData.find((label) => label.name === labelName);
+        return label || { id: "", name: labelName };
+      });
+
       setSelectedLabels(noteLabels);
+      setInitialLabels(noteLabels);
     }
   }, [currentNote, labelsData]);
-
-  useEffect(() => {
-    if (labelsData) {
-      setLabels(
-        labelsData.map((labelData) => ({
-          id: labelData.id,
-          name: labelData.name,
-        }))
-      );
-    }
-  }, [labelsData]);
 
   useEffect(() => {
     const handleClickOutsideLabelsModal = (event) => {
@@ -70,30 +68,34 @@ const NoteModal = ({
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value);
     setLabelExists(
-      labels.some(
+      labelsData.some(
         (label) => label.name.toLowerCase() === e.target.value.toLowerCase()
       )
     );
   };
 
   const addLabel = async () => {
-    const newLabel = { name: searchTerm };
-
-    // Optimistically update the UI
-    setLabels([...labels, newLabel]);
-    setSelectedLabels([...selectedLabels, searchTerm]);
-    setSearchTerm("");
-
     try {
-      await addDoc(collection(db, `users/${user?.uid}/labels`), {
-        name: searchTerm,
-      });
+      // Create the new label in Firestore
+      const labelRef = await addDoc(
+        collection(db, `users/${user?.uid}/labels`),
+        {
+          name: searchTerm,
+        }
+      );
+
+      // Get the id of the newly created label
+      const newLabelId = labelRef.id;
+
+      // Update the labels state with the new label's id and name
+      setSelectedLabels([
+        ...selectedLabels,
+        { id: newLabelId, name: searchTerm },
+      ]);
+
+      setSearchTerm("");
     } catch (error) {
       console.error(error);
-
-      // If an error occurs, revert the UI to its previous state
-      setLabels(labels);
-      setSelectedLabels(selectedLabels);
     }
   };
 
@@ -101,13 +103,14 @@ const NoteModal = ({
     label.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const toggleLabel = (labelName) => {
-    const isSelected = selectedLabels.includes(labelName);
+  const toggleLabel = (labelId) => {
+    const isSelected = selectedLabels.some((label) => label.id === labelId);
 
     if (isSelected) {
-      setSelectedLabels(selectedLabels.filter((l) => l !== labelName));
+      setSelectedLabels(selectedLabels.filter((label) => label.id !== labelId));
     } else {
-      setSelectedLabels([...selectedLabels, labelName]);
+      const labelName = labelsData.find((label) => label.id === labelId).name;
+      setSelectedLabels([...selectedLabels, { id: labelId, name: labelName }]);
     }
   };
 
@@ -127,8 +130,18 @@ const NoteModal = ({
 
   const handleClickOutside = (e) => {
     if (!modalContainerRef.current.contains(e.target)) {
+      setEditedTitle(currentNote.title);
+      setEditedContent(currentNote.content);
+      setSelectedLabels(initialLabels);
       setShowNoteModal(false);
     }
+  };
+
+  const handleCloseModal = () => {
+    setEditedTitle(currentNote.title);
+    setEditedContent(currentNote.content);
+    setSelectedLabels(initialLabels);
+    setShowNoteModal(false);
   };
 
   if (!showNoteModal) {
@@ -166,9 +179,9 @@ const NoteModal = ({
           autoComplete="no-autocomplete-please"
         />
         <div className="flex flex-wrap items-center gap-1 p-1">
-          {selectedLabels.map((labelName) => (
+          {selectedLabels.map(({ id, name: labelName }) => (
             <div
-              key={labelName}
+              key={id}
               className="relative flex items-center bg-zinc-200 rounded px-2 py-1 group"
               style={{ minWidth: "max-content" }}
             >
@@ -179,7 +192,7 @@ const NoteModal = ({
                 className="absolute right-0 mr-1 focus:outline-none opacity-0 group-hover:opacity-100 transition-opacity duration-200"
                 onClick={(e) => {
                   e.stopPropagation();
-                  toggleLabel(labelName);
+                  toggleLabel(id);
                 }}
               >
                 <svg
@@ -230,7 +243,7 @@ const NoteModal = ({
           <div>
             <button
               className="py-1 px-2 mr-2 bg-zinc-50 rounded hover:bg-zinc-200 font-semibold text-zinc-800"
-              onClick={() => setShowNoteModal(false)}
+              onClick={handleCloseModal}
             >
               Close
             </button>
@@ -257,31 +270,30 @@ const NoteModal = ({
               autoComplete="off"
             />
             <div>
-              {filteredLabels.map(({ name: labelName, checked }) => (
+              {filteredLabels.map((label) => (
                 <div
-                  key={labelName}
+                  key={label.id}
                   className="flex items-center mb-1 p-0.5 hover:bg-zinc-100 cursor-pointer text-sm"
-                  onClick={() => toggleLabel(labelName)}
+                  onClick={() => toggleLabel(label.id, label.name)}
                 >
                   <input
                     type="checkbox"
-                    id={labelName}
+                    id={label.name}
                     className="mr-2"
                     checked={selectedLabels.some(
-                      (label) => label.name === labelName
+                      (selectedLabel) => selectedLabel.id === label.id
                     )}
                     onChange={(e) => {
                       e.stopPropagation();
-                      toggleLabel(labelName);
+                      toggleLabel(label.id, label.name);
                     }}
                   />
-
                   <label
-                    htmlFor={labelName}
+                    htmlFor={label.name}
                     onClick={(e) => e.stopPropagation()}
                     className="cursor-pointer"
                   >
-                    {labelName}
+                    {label.name}
                   </label>
                 </div>
               ))}

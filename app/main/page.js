@@ -80,6 +80,7 @@ function Main() {
   const [notesWithLabelNames, setNotesWithLabelNames] = useState([]);
   const [showNoteModal, setShowNoteModal] = useState(false);
   const [currentNote, setCurrentNote] = useState({});
+  const [currentNoteLabelObjects, setCurrentNoteLabelObjects] = useState([]);
 
   const getNoteWithLabelNames = useCallback(
     (note) => {
@@ -122,8 +123,37 @@ function Main() {
     }
   }, [notesData, labelsData, getNoteWithLabelNames]);
 
+  useEffect(() => {
+    if (currentNote && currentNote.labels && labelsData) {
+      const newCurrentNoteLabelObjects = getLabelObjects(
+        currentNote.labels,
+        labelsData
+      );
+      setCurrentNoteLabelObjects(newCurrentNoteLabelObjects);
+    }
+  }, [currentNote, labelsData]);
+
   const getNotes = () => {
     console.log(notes);
+  };
+
+  const getLabelObjects = (currentNoteLabels, allLabelsData) => {
+    return currentNoteLabels
+      .map((labelName) => {
+        const foundLabel = allLabelsData.find(
+          (label) => label.name === labelName
+        );
+        if (foundLabel) {
+          return {
+            id: foundLabel.id,
+            name: foundLabel.name,
+          };
+        } else {
+          // If the label is not found in labelsData, return null or an empty object
+          return null;
+        }
+      })
+      .filter((label) => label !== null); // Filter out null values if any
   };
 
   const updateNote = async (updatedNote) => {
@@ -168,6 +198,7 @@ function Main() {
               onClick={() => {
                 console.log(note.id);
                 setCurrentNote(note);
+                console.log("test", getLabelObjects(note.labels, labelsData));
                 setShowNoteModal(true);
               }}
               className="bg-white p-4 rounded shadow mb-4"
@@ -231,6 +262,7 @@ function Main() {
         currentNote={currentNote}
         labelsData={labelsData}
         onUpdateNote={updateNote}
+        currentNoteLabelObjects={currentNoteLabelObjects}
       />
     </div>
   );
