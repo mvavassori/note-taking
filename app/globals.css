@@ -66,6 +66,16 @@ aside::-webkit-scrollbar-thumb:hover {
   overflow-y: auto;
 }
 
+/*make buttons appear on hovering note*/
+.note-hover:hover .note-hover-child {
+  opacity: 100;
+}
+
+/*make delete button appear on hovering label's div in a note*/
+.label-hover:hover .label-hover-child {
+  opacity: 100;
+}
+
 /* :root {
   --max-width: 1100px;
   --border-radius: 12px;

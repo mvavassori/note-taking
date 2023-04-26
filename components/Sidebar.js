@@ -1,4 +1,4 @@
-const Sidebar = ({ labelsData }) => {
+const Sidebar = ({ labelsData, onLabelClick }) => {
   return (
     <aside className="h-screen fixed left-0 top-0 w-1/5 pt-16 bg-zinc-800 overflow-y-hidden hover:overflow-y-auto pr-1">
       <button className="text-left w-full text-white hover:bg-zinc-700 py-3 pl-8 rounded focus:outline-none font-medium flex">
@@ -19,7 +19,10 @@ const Sidebar = ({ labelsData }) => {
         {labelsData &&
           labelsData.map((label) => (
             <li key={label.id} className="">
-              <button className="text-left w-full text-white hover:bg-zinc-700 py-3 pl-8 rounded focus:outline-none font-medium flex">
+              <button
+                className="text-left w-full text-white hover:bg-zinc-700 py-3 pl-8 rounded focus:outline-none font-medium flex"
+                onClick={() => onLabelClick(label.id)}
+              >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   width="24"

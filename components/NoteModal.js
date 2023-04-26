@@ -21,7 +21,7 @@ const NoteModal = ({
   const [labelExists, setLabelExists] = useState(false);
   const [selectedLabels, setSelectedLabels] = useState(currentNoteLabelObjects);
   const [showLabelsModal, setShowLabelsModal] = useState(false);
-  const [showTooltip, setShowTooltip] = useState(false);
+  const [showLabelTooltip, setShowLabelTooltip] = useState(false);
   const [initialLabels, setInitialLabels] = useState([]);
 
   const modalContainerRef = useRef();
@@ -185,7 +185,7 @@ const NoteModal = ({
               className="relative flex items-center bg-zinc-200 rounded px-2 py-1 group"
               style={{ minWidth: "max-content" }}
             >
-              <span className="px-2 py-0.5 text-sm text-zinc-800 bg-zinc-200 rounded-full truncate transition-all duration-200 group-hover:mr-4">
+              <span className="px-2 py-0.5 text-xs text-zinc-800 bg-zinc-200 rounded-full truncate transition-all duration-200 group-hover:mr-4">
                 {labelName}
               </span>
               <button
@@ -217,8 +217,8 @@ const NoteModal = ({
                 showLabelsModal ? "bg-zinc-100" : ""
               }`}
               onClick={() => setShowLabelsModal(!showLabelsModal)}
-              onMouseEnter={() => setShowTooltip(true)}
-              onMouseLeave={() => setShowTooltip(false)}
+              onMouseEnter={() => setShowLabelTooltip(true)}
+              onMouseLeave={() => setShowLabelTooltip(false)}
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -234,7 +234,7 @@ const NoteModal = ({
             </button>
             <div
               className={`absolute py-1 px-2 text-xs text-white bg-zinc-700 rounded ${
-                showTooltip ? "opacity-100" : "opacity-0"
+                showLabelTooltip ? "opacity-100" : "opacity-0"
               } transition ease-in-out duration-200`}
             >
               Add Label
