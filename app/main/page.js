@@ -82,8 +82,7 @@ function Main() {
   const [currentNote, setCurrentNote] = useState({});
   const [currentNoteLabelObjects, setCurrentNoteLabelObjects] = useState([]);
   const [selectedLabel, setSelectedLabel] = useState(null);
-  const [showRemoveLabelTooltip, setShowRemoveLabelTooltip] = useState(false);
-  const [showDeleteTooltip, setShowDeleteTooltip] = useState(false);
+  const [activeTooltip, setActiveTooltip] = useState("");
 
   const getNoteWithLabelNames = useCallback(
     (note) => {
@@ -222,7 +221,16 @@ function Main() {
       <Sidebar labelsData={labelsData} onLabelClick={handleLabelClick} />
       <div className="w-4/5 ml-1-5-vw">
         <CreateNote labelsData={labelsData} />
-        <div className="my-12">
+        <div className="group relative m-12 flex justify-center">
+          <button className="rounded bg-amber-500 px-4 py-2 text-sm text-white shadow-sm">
+            Hover me!
+          </button>
+          <span className="absolute top-10 opacity-0 transition ease-in-out duration-200 rounded bg-gray-800 p-2 text-xs text-white group-hover:opacity-100">
+            ✨ You hover me!
+          </span>
+        </div>
+
+        <div className="my-12 px-10">
           {filteredNotes?.map((note) => (
             <div
               key={note.id}
@@ -231,7 +239,7 @@ function Main() {
                 setCurrentNote(note);
                 setShowNoteModal(true);
               }}
-              className="relative bg-white p-4 rounded shadow mb-4 cursor-pointer note-hover"
+              className="relative bg-white p-4 rounded shadow mb-6 cursor-pointer note-hover"
             >
               {/* Note title */}
               {note.title && (
@@ -243,72 +251,93 @@ function Main() {
               </p>
               {/* Note labels */}
               <div className="flex flex-wrap">
-                {note.labels.map((labelName) => {
-                  const labelId = labelsData?.find(
-                    (label) => label.name === labelName
-                  )?.id;
-                  return (
-                    <div
-                      key={labelName}
-                      className="relative flex items-center bg-gray-200 rounded px-2 py-1 mr-2 mb-2 label-hover"
-                    >
-                      <span className="px-1 py-0.5 text-xs text-gray-700 bg-gray-200 rounded-full truncate transition-all duration-200">
-                        {labelName}
-                      </span>
-                      <button
-                        className="absolute right-0 mr-1 focus:outline-none opacity-0 label-hover-child transition-opacity duration-200 bg-zinc-200"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          removeLabelFromNote(note.id, labelId);
-                        }}
-                        onMouseEnter={() => setShowRemoveLabelTooltip(true)}
-                        onMouseLeave={() => setShowRemoveLabelTooltip(false)}
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="16"
-                          height="16"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            fill="currentColor"
-                            d="M6.4 19L5 17.6l5.6-5.6L5 6.4L6.4 5l5.6 5.6L17.6 5L19 6.4L13.4 12l5.6 5.6l-1.4 1.4l-5.6-5.6L6.4 19Z"
-                          />
-                        </svg>
-                      </button>
+                <div className="flex flex-wrap">
+                  {note.labels.map((labelName) => {
+                    const labelId = labelsData?.find(
+                      (label) => label.name === labelName
+                    )?.id;
+                    return (
                       <div
-                        className={`absolute py-1 px-2 text-xs text-white bg-zinc-700 rounded ${
-                          showRemoveLabelTooltip ? "opacity-100" : "opacity-0"
-                        } transition ease-in-out duration-200`}
+                        key={labelName}
+                        className="relative flex items-center bg-gray-200 rounded px-2 py-1 mr-2 mb-2 label-hover"
                       >
-                        Remove Label
+                        <span className="px-1 py-0.5 text-xs text-gray-700 bg-gray-200 rounded-full truncate transition-all duration-200">
+                          {labelName}
+                        </span>
+                        <button
+                          className="absolute right-0 mr-1 focus:outline-none opacity-0 label-hover-child transition-opacity duration-200 bg-zinc-200"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeLabelFromNote(note.id, labelId);
+                          }}
+                          onMouseEnter={() =>
+                            setActiveTooltip(
+                              `removeLabel-${note.id}-${labelId}`
+                            )
+                          }
+                          onMouseLeave={() => setActiveTooltip("")}
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              fill="currentColor"
+                              d="M6.4 19L5 17.6l5.6-5.6L5 6.4L6.4 5l5.6 5.6L17.6 5L19 6.4L13.4 12l5.6 5.6l-1.4 1.4l-5.6-5.6L6.4 19Z"
+                            />
+                          </svg>
+                        </button>
+                        <span
+                          className={`absolute top-auto mt-3 right-0 bg-zinc-700 text-white text-xs px-2 py-1 rounded ${
+                            activeTooltip ===
+                            `removeLabel-${note.id}-${labelId}`
+                              ? "opacity-100"
+                              : "opacity-0"
+                          } transition-opacity duration-200`}
+                        >
+                          Remove Label
+                        </span>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
               {/* Delete note button */}
-              <button
-                className="absolute bottom-0 right-0 m-1 focus:outline-none opacity-0 note-hover-child transition-opacity duration-200 hover:text-red-500"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  deleteNote(note.id);
-                }}
-                onMouseEnter={() => setShowDeleteTooltip(true)}
-                onMouseLeave={() => setShowDeleteTooltip(false)}
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
+              <div>
+                <button
+                  className="absolute bottom-0 right-0 m-1 focus:outline-none opacity-0 note-hover-child transition-opacity duration-200 hover:text-red-500"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    deleteNote(note.id);
+                  }}
+                  onMouseEnter={() => setActiveTooltip(`deleteNote-${note.id}`)}
+                  onMouseLeave={() => setActiveTooltip("")}
                 >
-                  <path
-                    fill="currentColor"
-                    d="M16 9v10H8V9h8m-1.5-6h-5l-1 1H5v2h14V4h-3.5l-1-1zM18 7H6v12c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7z"
-                  />
-                </svg>
-              </button>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      fill="currentColor"
+                      d="M16 9v10H8V9h8m-1.5-6h-5l-1 1H5v2h14V4h-3.5l-1-1zM18 7H6v12c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7z"
+                    />
+                  </svg>
+                </button>
+                {/* Tooltip for Delete Note button */}
+                <span
+                  className={`absolute top-auto mt-3 right-0 bg-zinc-700 text-white text-xs px-2 py-1 rounded ${
+                    activeTooltip === `deleteNote-${note.id}`
+                      ? "opacity-100"
+                      : "opacity-0"
+                  } transition-opacity duration-200`}
+                >
+                  Delete Note
+                </span>
+              </div>
             </div>
           ))}
         </div>
@@ -332,49 +361,3 @@ function Main() {
 }
 
 export default Main;
-// {filteredNotes?.map((note) => (
-//             <div
-//               key={note.id}
-//               onClick={() => {
-//                 console.log(note.id);
-//                 setCurrentNote(note);
-//                 setShowNoteModal(true);
-//               }}
-//               className="bg-white p-4 rounded shadow mb-4"
-//             >
-//               {note.title && (
-//                 <h3 className="text-lg font-semibold mb-2">{note.title}</h3>
-//               )}
-//               <p className="text-gray-700 mb-2 overflow-hidden whitespace-nowrap overflow-ellipsis">
-//                 {note.content}
-//               </p>
-//               <div className="flex flex-wrap">
-//                 {note.labels.map((labelName) => (
-//                   <div
-//                     key={labelName}
-//                     className="relative flex items-center bg-gray-200 rounded px-2 py-1 mr-2 mb-2 group"
-//                   >
-//                     <span className="px-2 py-0.5 text-xs text-gray-700 bg-gray-200 rounded-full truncate transition-all duration-200 group-hover:mr-4">
-//                       {labelName}
-//                     </span>
-//                     <button
-//                       className="absolute right-0 mr-1 focus:outline-none opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-//                       //functionality for removeLabelFromNote
-//                     >
-//                       <svg
-//                         xmlns="http://www.w3.org/2000/svg"
-//                         width="16"
-//                         height="16"
-//                         viewBox="0 0 24 24"
-//                       >
-//                         <path
-//                           fill="currentColor"
-//                           d="M6.4 19L5 17.6l5.6-5.6L5 6.4L6.4 5l5.6 5.6L17.6 5L19 6.4L13.4 12l5.6 5.6l-1.4 1.4l-5.6-5.6L6.4 19Z"
-//                         />
-//                       </svg>
-//                     </button>
-//                   </div>
-//                 ))}
-//               </div>
-//             </div>
-//           ))}
