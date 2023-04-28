@@ -1,7 +1,11 @@
-const Sidebar = ({ labelsData, onLabelClick }) => {
+const Sidebar = ({ labelsData }) => {
   return (
-    <aside className="h-screen fixed left-0 top-0 w-1/5 pt-16 bg-zinc-800 overflow-y-hidden hover:overflow-y-auto pr-1">
-      <button className="text-left w-full text-white hover:bg-zinc-700 py-3 pl-8 rounded focus:outline-none font-medium flex">
+    <aside className="h-screen fixed left-0 top-0 w-64 mt-12 pt-2 pb-14 bg-zinc-900 overflow-y-hidden hover:overflow-y-auto pr-1 z-20">
+      <button
+        className="text-left w-full text-white hover:bg-zinc-700 py-3 pl-8 rounded focus:outline-none font-medium flex"
+        // onClick={() => onLabelClick(null)}
+        onClick={() => router.push("/main")}
+      >
         <svg
           xmlns="http://www.w3.org/2000/svg"
           width="24"
@@ -21,7 +25,8 @@ const Sidebar = ({ labelsData, onLabelClick }) => {
             <li key={label.id} className="">
               <button
                 className="text-left w-full text-white hover:bg-zinc-700 py-3 pl-8 rounded focus:outline-none font-medium flex"
-                onClick={() => onLabelClick(label.id)}
+                // onClick={() => onLabelClick(label.id)}
+                onClick={() => router.push(`/main?label=${label.id}`)}
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"

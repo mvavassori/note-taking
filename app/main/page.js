@@ -1,9 +1,9 @@
 "use client";
-
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { auth, useAuth, db } from "@/firebase";
 import { signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import {
   collection,
   query,
@@ -77,11 +77,13 @@ function Main() {
   const [notesData] = useCollectionData(notesRef);
 
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const labelQuery = searchParams.get("label");
+
   const [notesWithLabelNames, setNotesWithLabelNames] = useState([]);
   const [showNoteModal, setShowNoteModal] = useState(false);
   const [currentNote, setCurrentNote] = useState({});
   const [currentNoteLabelObjects, setCurrentNoteLabelObjects] = useState([]);
-  const [selectedLabel, setSelectedLabel] = useState(null);
   const [activeTooltip, setActiveTooltip] = useState("");
 
   const getNoteWithLabelNames = useCallback(
@@ -102,20 +104,18 @@ function Main() {
   );
 
   const filteredNotes = useMemo(() => {
-    if (!selectedLabel) {
+    if (!labelQuery) {
       return notesWithLabelNames;
     }
-
     // Find the label name corresponding to the selected label id
     const selectedLabelName = labelsData?.find(
-      (label) => label.id === selectedLabel
+      (label) => label.id === labelQuery
     )?.name;
-
     // Filter the notes based on the selected label name
     return notesWithLabelNames.filter((note) =>
       note.labels.includes(selectedLabelName)
     );
-  }, [notesWithLabelNames, selectedLabel, labelsData]);
+  }, [notesWithLabelNames, labelQuery, labelsData]);
 
   useEffect(() => {
     if (notesData && labelsData) {
@@ -134,13 +134,6 @@ function Main() {
     }
   }, [currentNote, labelsData]);
 
-  useEffect(() => {
-    if (notesWithLabelNames && filteredNotes) {
-      console.log("notesWithLabelNames", notesWithLabelNames);
-      console.log("filteredNotes", filteredNotes);
-    }
-  }, [filteredNotes, notesWithLabelNames]);
-
   const getLabelObjects = (currentNoteLabels, allLabelsData) => {
     return currentNoteLabels
       .map((labelName) => {
@@ -158,12 +151,6 @@ function Main() {
         }
       })
       .filter((label) => label !== null); // Filter out null values if any
-  };
-
-  // Function to set the currently selected label
-  const handleLabelClick = (labelId) => {
-    setSelectedLabel(labelId);
-    console.log(selectedLabel);
   };
 
   const removeLabelFromNote = async (noteId, labelId) => {
@@ -217,18 +204,18 @@ function Main() {
   };
 
   return (
-    <div className="flex bg-zinc-900 px-2">
-      <Sidebar labelsData={labelsData} onLabelClick={handleLabelClick} />
-      <div className="w-4/5 ml-1-5-vw">
+    <div className="flex bg-zinc-800 px-2">
+      <Sidebar labelsData={labelsData} />
+      <div className="w-full pl-64">
         <CreateNote labelsData={labelsData} />
-        <div className="group relative m-12 flex justify-center">
+        {/* <div className="group relative m-12 flex justify-center">
           <button className="rounded bg-amber-500 px-4 py-2 text-sm text-white shadow-sm">
             Hover me!
           </button>
           <span className="absolute top-10 opacity-0 transition ease-in-out duration-200 rounded bg-gray-800 p-2 text-xs text-white group-hover:opacity-100">
             ✨ You hover me!
           </span>
-        </div>
+        </div> */}
 
         <div className="my-12 px-10">
           {filteredNotes?.map((note) => (
@@ -265,17 +252,11 @@ function Main() {
                           {labelName}
                         </span>
                         <button
-                          className="absolute right-0 mr-1 focus:outline-none opacity-0 label-hover-child transition-opacity duration-200 bg-zinc-200"
+                          className="absolute right-0 mr-1 focus:outline-none opacity-0 label-hover-child transition-opacity duration-200 bg-zinc-300 rounded-full"
                           onClick={(e) => {
                             e.stopPropagation();
                             removeLabelFromNote(note.id, labelId);
                           }}
-                          onMouseEnter={() =>
-                            setActiveTooltip(
-                              `removeLabel-${note.id}-${labelId}`
-                            )
-                          }
-                          onMouseLeave={() => setActiveTooltip("")}
                         >
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -289,16 +270,6 @@ function Main() {
                             />
                           </svg>
                         </button>
-                        <span
-                          className={`absolute top-auto mt-3 right-0 bg-zinc-700 text-white text-xs px-2 py-1 rounded ${
-                            activeTooltip ===
-                            `removeLabel-${note.id}-${labelId}`
-                              ? "opacity-100"
-                              : "opacity-0"
-                          } transition-opacity duration-200`}
-                        >
-                          Remove Label
-                        </span>
                       </div>
                     );
                   })}

@@ -19,7 +19,7 @@ export default function RootLayout({ children }) {
     <html lang="en" className={roboto.className}>
       <body className="min-h-screen flex flex-col">
         <Navbar />
-        <div className="w-full flex-grow pt-16 bg-zinc-900">{children}</div>
+        <div className="w-full flex-grow pt-16 bg-zinc-800">{children}</div>
       </body>
     </html>
   );

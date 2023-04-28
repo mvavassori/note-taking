@@ -32,13 +32,9 @@ const NoteModal = ({
       setEditedTitle(currentNote.title || "");
       setEditedContent(currentNote.content || "");
     }
-    console.log(currentNote.labels);
   }, [currentNote]);
 
   useEffect(() => {
-    console.log("currentNote:", currentNote);
-    console.log("labelsData:", labelsData);
-
     if (currentNote && currentNote.labels && labelsData) {
       const noteLabels = currentNote.labels.map((labelName) => {
         const label = labelsData.find((label) => label.name === labelName);
@@ -185,7 +181,7 @@ const NoteModal = ({
               className="relative flex items-center bg-zinc-200 rounded px-2 py-1 group"
               style={{ minWidth: "max-content" }}
             >
-              <span className="px-2 py-0.5 text-xs text-zinc-800 bg-zinc-200 rounded-full truncate transition-all duration-200 group-hover:mr-4">
+              <span className="px-2 py-0.5 text-xs text-zinc-800 bg-zinc-200 rounded-full truncate transition-all duration-200">
                 {labelName}
               </span>
               <button

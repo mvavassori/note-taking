@@ -123,7 +123,7 @@ export default function CreateNote({ labelsData }) {
 
   const saveNote = async () => {
     // Fetch the label document IDs for the selected labels
-    console.log(labelsData);
+    // console.log(labelsData);
     const selectedLabelIds = labels
       .filter((label) => selectedLabels.includes(label.name))
       .map((label) => label.id);
@@ -211,11 +211,11 @@ export default function CreateNote({ labelsData }) {
               className="relative flex items-center bg-zinc-200 rounded px-2 py-1 group"
               style={{ minWidth: "max-content" }}
             >
-              <span className="px-2 py-0.5 text-sm text-zinc-800 bg-zinc-200 rounded-full truncate transition-all duration-200 group-hover:mr-4">
+              <span className="px-2 py-0.5 text-sm text-zinc-800 bg-zinc-200 rounded-full truncate transition-all duration-200">
                 {labelName}
               </span>
               <button
-                className="absolute right-0 mr-1 focus:outline-none opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                className="absolute right-0 mr-1 focus:outline-none opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-zinc-300 rounded-full"
                 onClick={(e) => {
                   e.stopPropagation();
                   toggleLabel(labelName);
@@ -321,7 +321,6 @@ export default function CreateNote({ labelsData }) {
                     toggleLabel(labelName);
                   }}
                 />
-
                 <label
                   htmlFor={labelName}
                   onClick={(e) => e.stopPropagation()}

@@ -33,7 +33,7 @@ const Navbar = () => {
   }, []);
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 bg-zinc-700 z-50 pl-8">
+      <header className="fixed top-0 left-0 right-0 bg-zinc-700 z-50 pl-8 h-12">
         <div className="container py-2 flex items-center justify-between">
           {/* Logo / App Name */}
           <div className="font-bold text-xl text-white">
