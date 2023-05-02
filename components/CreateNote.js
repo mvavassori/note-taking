@@ -123,7 +123,6 @@ export default function CreateNote({ labelsData }) {
 
   const saveNote = async () => {
     // Fetch the label document IDs for the selected labels
-    // console.log(labelsData);
     const selectedLabelIds = labels
       .filter((label) => selectedLabels.includes(label.name))
       .map((label) => label.id);

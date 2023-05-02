@@ -1,4 +1,3 @@
-// import * as firebase from "firebase";
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { useEffect } from "react";
