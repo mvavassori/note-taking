@@ -1,4 +1,7 @@
+import { useRouter } from "next/navigation";
+
 const Sidebar = ({ labelsData }) => {
+  const router = useRouter();
   return (
     <aside className="h-screen fixed left-0 top-0 w-64 mt-12 pt-2 pb-14 bg-zinc-900 overflow-y-hidden hover:overflow-y-auto pr-1 z-20">
       <button
