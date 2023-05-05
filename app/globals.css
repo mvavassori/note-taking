@@ -76,6 +76,10 @@ aside::-webkit-scrollbar-thumb:hover {
   opacity: 100;
 }
 
+.linkify a {
+  text-decoration: underline;
+}
+
 /* :root {
   --max-width: 1100px;
   --border-radius: 12px;

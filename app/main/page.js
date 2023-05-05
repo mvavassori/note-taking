@@ -2,8 +2,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { auth, useAuth, db } from "@/firebase";
 import { signOut } from "firebase/auth";
-import { useRouter } from "next/navigation";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   collection,
   query,
@@ -15,6 +14,7 @@ import {
   arrayRemove,
 } from "firebase/firestore";
 import { useCollectionData } from "react-firebase-hooks/firestore";
+import Linkify from "react-linkify";
 import CreateNote from "@/components/CreateNote";
 import Sidebar from "@/components/Sidebar";
 import NoteModal from "@/components/NoteModal";
@@ -59,6 +59,24 @@ const notesConverter = {
       updated_at: data.updated_at,
     };
   },
+};
+
+export const CustomLink = (props) => {
+  const handleClick = (event) => {
+    event.stopPropagation();
+  };
+
+  return (
+    <a
+      href={props.href}
+      target="_blank"
+      rel="noopener noreferrer"
+      style={{ textDecoration: "underline" }}
+      onClick={handleClick}
+    >
+      {props.children}
+    </a>
+  );
 };
 
 function Main() {
@@ -185,6 +203,7 @@ function Main() {
   };
 
   if (authLoading) {
+    //todo: make this a spinner
     // Show loading spinner or something similar
     return <div>Loading...</div>;
   }
@@ -208,15 +227,6 @@ function Main() {
       <Sidebar labelsData={labelsData} />
       <div className="w-full pl-64">
         <CreateNote labelsData={labelsData} />
-        {/* <div className="group relative m-12 flex justify-center">
-          <button className="rounded bg-amber-500 px-4 py-2 text-sm text-white shadow-sm">
-            Hover me!
-          </button>
-          <span className="absolute top-10 opacity-0 transition ease-in-out duration-200 rounded bg-gray-800 p-2 text-xs text-white group-hover:opacity-100">
-            ✨ You hover me!
-          </span>
-        </div> */}
-
         <div className="my-12 px-10">
           {filteredNotes?.map((note) => (
             <div
@@ -226,7 +236,7 @@ function Main() {
                 setCurrentNote(note);
                 setShowNoteModal(true);
               }}
-              className="relative bg-white p-4 rounded shadow mb-6 cursor-pointer note-hover"
+              className="relative bg-white p-4 rounded shadow mb-6 note-hover border-2 border-transparent hover:border-zinc-400"
             >
               {/* Note title */}
               {note.title && (
@@ -234,7 +244,15 @@ function Main() {
               )}
               {/* Note content */}
               <p className="text-gray-700 mb-2 overflow-hidden whitespace-nowrap overflow-ellipsis">
-                {note.content}
+                <Linkify
+                  componentDecorator={(decoratedHref, decoratedText, key) => (
+                    <CustomLink key={key} href={decoratedHref}>
+                      {decoratedText}
+                    </CustomLink>
+                  )}
+                >
+                  {note.content}
+                </Linkify>
               </p>
               {/* Note labels */}
               <div className="flex flex-wrap">

@@ -1,12 +1,16 @@
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 const Sidebar = ({ labelsData }) => {
+  console.log(labelsData);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const labelQuery = searchParams.get("label");
   return (
     <aside className="h-screen fixed left-0 top-0 w-64 mt-12 pt-2 pb-14 bg-zinc-900 overflow-y-hidden hover:overflow-y-auto pr-1 z-20">
       <button
-        className="text-left w-full text-white hover:bg-zinc-700 py-3 pl-8 rounded focus:outline-none font-medium flex"
-        // onClick={() => onLabelClick(null)}
+        className={`text-left w-full text-white hover:bg-zinc-700 ${
+          !labelQuery ? "bg-zinc-700" : ""
+        } py-3 pl-8 rounded focus:outline-none font-medium flex`}
         onClick={() => router.push("/main")}
       >
         <svg
@@ -27,8 +31,9 @@ const Sidebar = ({ labelsData }) => {
           labelsData.map((label) => (
             <li key={label.id} className="">
               <button
-                className="text-left w-full text-white hover:bg-zinc-700 py-3 pl-8 rounded focus:outline-none font-medium flex"
-                // onClick={() => onLabelClick(label.id)}
+                className={`text-left w-full text-white hover:bg-zinc-700 ${
+                  labelQuery === label.id ? "bg-zinc-700" : ""
+                } py-3 pl-8 rounded focus:outline-none font-medium flex`}
                 onClick={() => router.push(`/main?label=${label.id}`)}
               >
                 <svg
