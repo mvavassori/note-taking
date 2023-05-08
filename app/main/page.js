@@ -183,14 +183,18 @@ function Main() {
   };
 
   const updateNote = async (updatedNote) => {
-    const noteRef = doc(db, `users/${user?.uid}/notes`, updatedNote.id);
-    const updatedData = {
-      title: updatedNote.title,
-      content: updatedNote.content,
-      labels: updatedNote.labels,
-      updated_at: serverTimestamp(),
-    };
-    await updateDoc(noteRef, updatedData);
+    try {
+      const noteRef = doc(db, `users/${user?.uid}/notes`, updatedNote.id);
+      const updatedData = {
+        title: updatedNote.title,
+        content: updatedNote.content,
+        labels: updatedNote.labels,
+        updated_at: serverTimestamp(),
+      };
+      await updateDoc(noteRef, updatedData);
+    } catch (error) {
+      console.error("Error updating the note: ", error);
+    }
   };
 
   const deleteNote = async (noteId) => {
@@ -199,6 +203,26 @@ function Main() {
       await deleteDoc(noteRef);
     } catch (error) {
       console.error("Error deleting the note: ", error);
+    }
+  };
+
+  const updateLabel = async (labelId, newLabelName) => {
+    try {
+      const labelRef = doc(db, `users/${user?.uid}/labels`, labelId);
+      await updateDoc(labelRef, { name: newLabelName });
+      // Update labelsData in the parent component's state after updating Firestore.
+    } catch (error) {
+      console.error("Error updating the label: ", error);
+    }
+  };
+
+  const deleteLabel = async (labelId) => {
+    try {
+      const labelRef = doc(db, `users/${user?.uid}/labels`, labelId);
+      await deleteDoc(labelRef);
+      // Update labelsData in the parent component's state after deleting from Firestore.
+    } catch (error) {
+      console.error("Error deleting the label: ", error);
     }
   };
 
@@ -224,7 +248,11 @@ function Main() {
 
   return (
     <div className="flex bg-zinc-800 px-2">
-      <Sidebar labelsData={labelsData} />
+      <Sidebar
+        labelsData={labelsData}
+        updateLabel={updateLabel}
+        deleteLabel={deleteLabel}
+      />
       <div className="w-full pl-64">
         <CreateNote labelsData={labelsData} />
         <div className="my-12 px-10">
