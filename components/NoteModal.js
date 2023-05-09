@@ -154,7 +154,6 @@ const NoteModal = ({
       <div
         ref={modalContainerRef}
         className="bg-zinc-50 p-4 rounded-lg shadow-lg w-full max-w-xl border-2 border-zinc-500"
-        // style={{ maxHeight: "80vh" }} // Set the maximum height based on the viewport height
       >
         <input
           type="text"

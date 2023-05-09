@@ -3,10 +3,12 @@
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useAuth } from "@/firebase";
+import AccountModal from "@/components/AccountModal";
 
 const Navbar = () => {
   const { user, loading } = useAuth();
   const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [showAccountModal, setShowAccountModal] = useState(false);
 
   const modalRef = useRef(null);
   const buttonRef = useRef(null);
@@ -37,7 +39,7 @@ const Navbar = () => {
         <div className="container py-2 flex items-center justify-between">
           {/* Logo / App Name */}
           <div className="font-bold text-xl text-white">
-            <Link href="/">Logo</Link>
+            <Link href="/main">Logo</Link>
           </div>
           {/* Search Bar */}
           {/* <div className="w-full max-w-md">
@@ -83,34 +85,30 @@ const Navbar = () => {
             {showSettingsModal && (
               <div
                 ref={modalRef}
-                className="absolute z-10 bg-white border border-gray-300 rounded shadow-xl flex flex-col top-full text-sm"
+                className="absolute z-10 bg-white border border-gray-300 rounded shadow-xl flex flex-col top-full text-sm right-1"
               >
-                <button className="text-left px-4 py-2 text-gray-700 hover:bg-gray-200 rounded focus:outline-none">
-                  Account
-                </button>
-                <button className="text-left px-4 py-2 text-gray-700 hover:bg-gray-200 rounded focus:outline-none">
-                  Settings
+                <button
+                  className="text-left px-4 py-2 text-gray-700 hover:bg-gray-200 rounded focus:outline-none whitespace-nowrap"
+                  onClick={() => setShowAccountModal(!showAccountModal)}
+                >
+                  {" "}
+                  {/*Here i'll add the onClick to open the AccountModal*/}
+                  Account Settings
                 </button>
                 <button className="text-left px-4 py-2 text-gray-700 hover:bg-gray-200 rounded focus:outline-none">
                   Dark Theme
                 </button>
+                <button className="text-left px-4 py-2 text-gray-700 hover:bg-gray-200 rounded focus:outline-none">
+                  Logout
+                </button>
               </div>
             )}
-            <button className="text-white hover:text-zinc-300 focus:outline-none">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  fill="currentColor"
-                  d="M5.85 17.1q1.275-.975 2.85-1.538T12 15q1.725 0 3.3.563t2.85 1.537q.875-1.025 1.363-2.325T20 12q0-3.325-2.337-5.663T12 4Q8.675 4 6.337 6.337T4 12q0 1.475.488 2.775T5.85 17.1ZM12 13q-1.475 0-2.488-1.012T8.5 9.5q0-1.475 1.012-2.488T12 6q1.475 0 2.488 1.012T15.5 9.5q0 1.475-1.012 2.488T12 13Zm0 9q-2.075 0-3.9-.788t-3.175-2.137q-1.35-1.35-2.137-3.175T2 12q0-2.075.788-3.9t2.137-3.175q1.35-1.35 3.175-2.137T12 2q2.075 0 3.9.788t3.175 2.137q1.35 1.35 2.138 3.175T22 12q0 2.075-.788 3.9t-2.137 3.175q-1.35 1.35-3.175 2.138T12 22Z"
-                />
-              </svg>
-            </button>
           </div>
         </div>
+        <AccountModal
+          showAccountModal={showAccountModal}
+          setShowAccountModal={setShowAccountModal}
+        />
       </header>
     </>
   );
