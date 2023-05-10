@@ -1,7 +1,6 @@
 "use client";
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { auth, useAuth, db } from "@/firebase";
-import { signOut } from "firebase/auth";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { useAuth, db } from "@/firebase";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   collection,
