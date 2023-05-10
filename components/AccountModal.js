@@ -1,13 +1,23 @@
 "use client";
 import { useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
   EmailAuthProvider,
   reauthenticateWithCredential,
   updatePassword,
+  deleteUser,
 } from "firebase/auth";
-import { useAuth } from "@/firebase";
+import { useAuth, db } from "@/firebase";
+import {
+  doc,
+  collection,
+  getDocs,
+  writeBatch,
+  deleteDoc,
+} from "firebase/firestore";
 
 const AccountModal = ({ showAccountModal, setShowAccountModal }) => {
+  const router = useRouter();
   const { user } = useAuth();
 
   const modalContainerRef = useRef(null);
@@ -27,6 +37,27 @@ const AccountModal = ({ showAccountModal, setShowAccountModal }) => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
+
+  // async function deleteUserData(uid) {
+  //   const userDocRef = doc(db, "users", uid);
+
+  //   // Delete notes subcollection
+  //   const notesCollectionRef = collection(userDocRef, "notes");
+  //   const notesSnapshot = await getDocs(notesCollectionRef);
+  //   for (const noteDoc of notesSnapshot.docs) {
+  //     await deleteDoc(noteDoc.ref);
+  //   }
+
+  //   // Delete labels subcollection
+  //   const labelsCollectionRef = collection(userDocRef, "labels");
+  //   const labelsSnapshot = await getDocs(labelsCollectionRef);
+  //   for (const labelDoc of labelsSnapshot.docs) {
+  //     await deleteDoc(labelDoc.ref);
+  //   }
+
+  //   // Delete the user document
+  //   await deleteDoc(userDocRef);
+  // }
 
   const handleChangePassword = async (e) => {
     e.preventDefault();
@@ -65,9 +96,78 @@ const AccountModal = ({ showAccountModal, setShowAccountModal }) => {
     }
   };
 
+  // const handleDeleteAccount = async () => {
+  //   const password = prompt("Please enter your password to confirm account deletion:");
+
+  //   if (!password) {
+  //     return;
+  //   }
+
+  //   try {
+  //     // Re-authenticate user
+  //     const credentials = EmailAuthProvider.credential(user?.email, password);
+  //     await reauthenticateWithCredential(user, credentials);
+
+  //     // Delete user's data from Firestore (or other database) here, if needed
+
+  //     // Delete user's account
+  //     await deleteUser(user);
+  //     alert("Your account has been deleted successfully.");
+
+  //     // Redirect user to the main page or login page
+  //     router.push("/");
+  //   } catch (error) {
+  //     console.error(error);
+  //     alert("Error deleting account.");
+  //   }
+  // };
+
   const handleDeleteAccount = async () => {
-    // Implement Firebase Authentication and Firestore logic for deleting the account
+    const password = prompt(
+      "Please enter your password to confirm account deletion:"
+    );
+
+    if (!password) {
+      return;
+    }
+
+    try {
+      // Re-authenticate user
+      const credentials = EmailAuthProvider.credential(user?.email, password);
+      await reauthenticateWithCredential(user, credentials);
+
+      // Delete user's data from Firestore
+      const userDocRef = doc(db, "users", user?.uid);
+      const notesCollectionRef = collection(userDocRef, "notes");
+      const labelsCollectionRef = collection(userDocRef, "labels");
+
+      await deleteCollectionData(notesCollectionRef);
+      await deleteCollectionData(labelsCollectionRef);
+      await deleteDoc(userDocRef);
+
+      // Delete user's account
+      await deleteUser(user);
+      alert("Your account has been deleted successfully.");
+
+      // Redirect user to the main page or login page
+      // router.push("/");
+      setShowAccountModal(false);
+    } catch (error) {
+      console.error(error);
+      alert("Error deleting account.");
+    }
   };
+
+  async function deleteCollectionData(collectionRef) {
+    const querySnapshot = await getDocs(collectionRef);
+    const batch = writeBatch(db);
+
+    querySnapshot.docs.forEach((doc) => {
+      batch.delete(doc.ref);
+    });
+
+    await batch.commit();
+  }
 
   if (!showAccountModal) {
     return null;

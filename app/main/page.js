@@ -227,24 +227,18 @@ function Main() {
   };
 
   if (authLoading) {
-    //todo: make this a spinner
-    // Show loading spinner or something similar
-    return <div>Loading...</div>;
+    // Loading spinner
+    return (
+      <div className="flex justify-center items-center w-full h-[calc(100vh-4rem)]">
+        <div className="my-spinner w-5 h-5 border-t-2 border-zinc-50 border-solid rounded-full"></div>
+      </div>
+    );
   }
   if (!user) {
     // User is not authenticated yet
     router.push("/login");
     return null;
   }
-
-  const handleSignOut = async () => {
-    try {
-      await signOut(auth);
-      console.log("user signed out");
-    } catch (error) {
-      console.error(error);
-    }
-  };
 
   return (
     <div className="flex bg-zinc-800 px-2">
@@ -357,12 +351,6 @@ function Main() {
               </div>
             </div>
           ))}
-        </div>
-
-        <div className="my-24">
-          <button className="bg-red-400" onClick={handleSignOut}>
-            Sign Out
-          </button>
         </div>
       </div>
       <NoteModal

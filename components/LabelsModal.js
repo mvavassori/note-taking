@@ -59,10 +59,7 @@ const LabelsModal = ({
       >
         <h2 className="text-xl mb-4">Edit Labels</h2>
         {labelsData.map((label) => (
-          <div
-            key={label.id}
-            className="flex mb-2 border border-black rounded-md items-center p-2"
-          >
+          <div key={label.id} className="flex mb-1 items-center p-2">
             <div className="relative flex items-center">
               <button
                 onClick={() => handleDeleteLabel(label.id)}
@@ -103,7 +100,7 @@ const LabelsModal = ({
                   [label.id]: e.target.value,
                 })
               }
-              className="w-full bg-zinc-50 focus:outline-none"
+              className="w-full border border-zinc-500 px-1 py-0.5 text-sm rounded-md"
             />
 
             {focusedLabelId === label.id && (
@@ -147,7 +144,15 @@ const LabelsModal = ({
             )}
           </div>
         ))}
-        <button onClick={() => setShowLabelModal(false)}>Close</button>
+        <div className="flex justify-between">
+          <div></div>
+          <button
+            className="py-1 px-2 mr-2 bg-zinc-50 rounded hover:bg-zinc-200 font-semibold text-zinc-800"
+            onClick={() => setShowLabelModal(false)}
+          >
+            Close
+          </button>
+        </div>
       </div>
     </div>
   );
