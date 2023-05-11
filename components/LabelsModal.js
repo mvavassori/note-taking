@@ -2,38 +2,20 @@
 import { useState, useRef, useEffect } from "react";
 
 const LabelsModal = ({
-  showLabelModal,
-  setShowLabelModal,
+  showLabelsModal,
+  setShowLabelsModal,
   labelsData,
   onUpdateLabel,
   onDeleteLabel,
+  onCreateLabel,
 }) => {
-  const [focusedLabelId, setFocusedLabelId] = useState(null);
   const [editedLabelNames, setEditedLabelNames] = useState({});
+  const [newLabelName, setNewLabelName] = useState("");
   const [activeTooltip, setActiveTooltip] = useState("");
+  const [focusedLabelId, setFocusedLabelId] = useState(null);
+  const [newLabelFocused, setNewLabelFocused] = useState(false);
 
   const modalContainerRef = useRef(null);
-
-  const handleDeleteLabel = (labelId) => {
-    onDeleteLabel(labelId);
-  };
-
-  const handleUpdateLabel = (labelId) => {
-    console.log("Label ID:", labelId);
-    console.log("Edited Label Name:", editedLabelNames[labelId]);
-    if (editedLabelNames[labelId]) {
-      onUpdateLabel(labelId, editedLabelNames[labelId]);
-    }
-  };
-
-  const handleClickOutside = (event) => {
-    if (
-      modalContainerRef.current &&
-      !modalContainerRef.current.contains(event.target)
-    ) {
-      setShowLabelModal(false);
-    }
-  };
 
   useEffect(() => {
     document.addEventListener("mousedown", handleClickOutside);
@@ -42,24 +24,96 @@ const LabelsModal = ({
     };
   }, []);
 
-  if (!showLabelModal) {
+  const handleClickOutside = (event) => {
+    if (
+      modalContainerRef.current &&
+      !modalContainerRef.current.contains(event.target)
+    ) {
+      setShowLabelsModal(false);
+    }
+  };
+
+  const handleDeleteLabel = (labelId) => {
+    onDeleteLabel(labelId);
+  };
+
+  const handleUpdateLabel = (labelId) => {
+    if (editedLabelNames[labelId]) {
+      onUpdateLabel(labelId, editedLabelNames[labelId]);
+    }
+  };
+
+  const handleCreateLabel = () => {
+    if (newLabelName) {
+      onCreateLabel(newLabelName);
+      setNewLabelName("");
+    }
+  };
+
+  if (!showLabelsModal) {
     return null;
   }
 
   return (
     <div
       className={`fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center transition-opacity ${
-        showLabelModal ? "opacity-100" : "opacity-0 pointer-events-none"
+        showLabelsModal ? "opacity-100" : "opacity-0 pointer-events-none"
       }`}
     >
       <div
         ref={modalContainerRef}
-        className="bg-zinc-50 py-4 px-5 rounded-lg shadow-lg w-full max-w-md border-2 border-zinc-500 overflow-y-auto"
-        style={{ maxHeight: "45vh" }}
+        className="bg-zinc-50 py-4 rounded-lg shadow-lg w-full max-w-sm border-2 border-zinc-500 overflow-y-auto"
+        style={{ maxHeight: "65vh" }}
       >
-        <h2 className="text-xl mb-4">Edit Labels</h2>
+        <h2 className="text-xl px-5 mb-4">Edit Labels</h2>
+        <hr className="mb-4" />
+        <div className="flex items-center mb-2 p-2 ml-8 px-7">
+          <input
+            type="text"
+            placeholder="New label"
+            value={newLabelName}
+            onFocus={() => setNewLabelFocused(true)}
+            onBlur={() => setNewLabelFocused(false)}
+            onChange={(e) => setNewLabelName(e.target.value)}
+            className="w-full border border-zinc-500 px-1 py-0.5 text-sm rounded-md"
+          />
+
+          {newLabelFocused && (
+            <div className="relative flex items-center">
+              <button
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  handleCreateLabel();
+                }}
+                onMouseEnter={() => setActiveTooltip("createLabel")}
+                onMouseLeave={() => setActiveTooltip("")}
+                className="ml-2 active:text-green-600 hover:text-green-500 rounded"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    fill="currentColor"
+                    d="M12 19v-2h3l3.55-5L15 7H5v3H3V7q0-.825.588-1.413T5 5h10q.5 0 .938.225t.712.625L21 12l-4.35 6.15q-.275.4-.713.625T15 19h-3Zm-.225-7ZM5 20v-3H2v-2h3v-3h2v3h3v2H7v3H5Z"
+                  />
+                </svg>
+              </button>
+              <span
+                className={`absolute bg-zinc-700 text-white text-xs px-2 py-1 rounded whitespace-nowrap ${
+                  activeTooltip === "createLabel" ? "opacity-100" : "opacity-0"
+                } transition-opacity duration-200 -bottom-6 left-1/2 transform -translate-x-1/2`}
+              >
+                Create Label
+              </span>
+            </div>
+          )}
+        </div>
+
         {labelsData.map((label) => (
-          <div key={label.id} className="flex mb-1 items-center p-2">
+          <div key={label.id} className="flex mb-1 items-center py-2 px-7">
             <div className="relative flex items-center">
               <button
                 onClick={() => handleDeleteLabel(label.id)}
@@ -144,11 +198,11 @@ const LabelsModal = ({
             )}
           </div>
         ))}
-        <div className="flex justify-between">
+        <div className="flex justify-between px-5">
           <div></div>
           <button
             className="py-1 px-2 mr-2 bg-zinc-50 rounded hover:bg-zinc-200 font-semibold text-zinc-800"
-            onClick={() => setShowLabelModal(false)}
+            onClick={() => setShowLabelsModal(false)}
           >
             Close
           </button>

@@ -11,6 +11,7 @@ import {
   serverTimestamp,
   deleteDoc,
   arrayRemove,
+  addDoc,
 } from "firebase/firestore";
 import { useCollectionData } from "react-firebase-hooks/firestore";
 import Linkify from "react-linkify";
@@ -81,8 +82,12 @@ export const CustomLink = (props) => {
 function Main() {
   const { user, loading: authLoading } = useAuth();
 
-  const labelsRef = collection(db, `users/${user?.uid}/labels`).withConverter(
-    labelsConverter
+  // const labelsRef = collection(db, `users/${user?.uid}/labels`).withConverter(
+  //   labelsConverter
+  // );
+  const labelsRef = query(
+    collection(db, `users/${user?.uid}/labels`).withConverter(labelsConverter),
+    orderBy("name", "asc")
   );
   const [labelsData] = useCollectionData(labelsRef);
 
@@ -225,6 +230,26 @@ function Main() {
     }
   };
 
+  const createLabel = async (newLabelName) => {
+    const isDuplicate = labelsData.some((label) => label.name === newLabelName);
+
+    if (isDuplicate) {
+      alert(
+        "A label with this name already exists. Please choose a different name."
+      );
+      return;
+    }
+
+    // Create a new label
+    try {
+      await addDoc(collection(db, `users/${user?.uid}/labels`), {
+        name: newLabelName,
+      });
+    } catch (error) {
+      console.error("Error creating the label: ", error);
+    }
+  };
+
   if (authLoading) {
     // Loading spinner
     return (
@@ -245,9 +270,10 @@ function Main() {
         labelsData={labelsData}
         updateLabel={updateLabel}
         deleteLabel={deleteLabel}
+        onCreateLabel={createLabel}
       />
       <div className="w-full pl-64">
-        <CreateNote labelsData={labelsData} />
+        <CreateNote labelsData={labelsData} onCreateLabel={createLabel} />
         <div className="my-12 px-10">
           {filteredNotes?.map((note) => (
             <div
@@ -257,14 +283,14 @@ function Main() {
                 setCurrentNote(note);
                 setShowNoteModal(true);
               }}
-              className="relative bg-white p-4 rounded shadow mb-6 note-hover border-2 border-transparent hover:border-zinc-400"
+              className="relative bg-zinc-900 p-4 rounded shadow mb-6 note-hover border-2 border-transparent hover:border-zinc-200 text-white"
             >
               {/* Note title */}
               {note.title && (
                 <h3 className="text-lg font-semibold mb-2">{note.title}</h3>
               )}
               {/* Note content */}
-              <p className="text-gray-700 mb-2 overflow-hidden whitespace-nowrap overflow-ellipsis">
+              <p className="text-zinc-200 mb-2 overflow-hidden whitespace-nowrap overflow-ellipsis">
                 <Linkify
                   componentDecorator={(decoratedHref, decoratedText, key) => (
                     <CustomLink key={key} href={decoratedHref}>
@@ -291,7 +317,7 @@ function Main() {
                           {labelName}
                         </span>
                         <button
-                          className="absolute right-0 mr-1 focus:outline-none opacity-0 label-hover-child transition-opacity duration-200 bg-zinc-300 rounded-full"
+                          className="absolute right-0 mr-1 focus:outline-none opacity-0 label-hover-child transition-opacity duration-200 bg-zinc-900 rounded-full"
                           onClick={(e) => {
                             e.stopPropagation();
                             removeLabelFromNote(note.id, labelId);

@@ -3,8 +3,8 @@ import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import LabelsModal from "@/components/LabelsModal";
 
-const Sidebar = ({ labelsData, updateLabel, deleteLabel }) => {
-  const [showLabelModal, setShowLabelModal] = useState(false);
+const Sidebar = ({ labelsData, updateLabel, deleteLabel, onCreateLabel }) => {
+  const [showLabelsModal, setShowLabelsModal] = useState(false);
 
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -58,7 +58,7 @@ const Sidebar = ({ labelsData, updateLabel, deleteLabel }) => {
       </ul>
       <button
         className="text-left w-full text-white hover:bg-zinc-700 py-3 pl-8 rounded focus:outline-none font-medium flex"
-        onClick={() => setShowLabelModal(true)}
+        onClick={() => setShowLabelsModal(true)}
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -78,11 +78,12 @@ const Sidebar = ({ labelsData, updateLabel, deleteLabel }) => {
         <span className="ml-2">Edit Labels</span>
       </button>
       <LabelsModal
-        showLabelModal={showLabelModal}
-        setShowLabelModal={setShowLabelModal}
+        showLabelsModal={showLabelsModal}
+        setShowLabelsModal={setShowLabelsModal}
         labelsData={labelsData}
         onUpdateLabel={updateLabel}
         onDeleteLabel={deleteLabel}
+        onCreateLabel={onCreateLabel}
       />
     </aside>
   );
