@@ -253,7 +253,7 @@ const NoteModal = ({
         {showLabelsModal && (
           <div
             ref={modalLabelsRef}
-            className="absolute z-10 w-64 p-2 bg-zinc-50 border border-zinc-300 rounded shadow-xl overflow-y-auto max-h-64"
+            className="absolute z-10 w-64 p-2 bg-zinc-50 border border-zinc-300 rounded shadow-xl overflow-y-auto max-h-32"
           >
             <p className="text-xs pb-2">Assign a label to the note</p>
             <input

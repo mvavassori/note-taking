@@ -18,6 +18,7 @@ import Linkify from "react-linkify";
 import CreateNote from "@/components/CreateNote";
 import Sidebar from "@/components/Sidebar";
 import NoteModal from "@/components/NoteModal";
+// import InfiniteScroll from "react-infinite-scroll-component";
 
 //used to get document ids of the labels
 const labelsConverter = {
@@ -82,9 +83,6 @@ export const CustomLink = (props) => {
 function Main() {
   const { user, loading: authLoading } = useAuth();
 
-  // const labelsRef = collection(db, `users/${user?.uid}/labels`).withConverter(
-  //   labelsConverter
-  // );
   const labelsRef = query(
     collection(db, `users/${user?.uid}/labels`).withConverter(labelsConverter),
     orderBy("name", "asc")

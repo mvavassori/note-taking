@@ -185,7 +185,7 @@ const AccountModal = ({ showAccountModal, setShowAccountModal }) => {
             Delete Account
           </button>
         </div>
-        <div className="flex justify-between">
+        <div className="flex justify-between px-5">
           <div></div>
           <button
             className="py-1 px-2 mr-2 bg-zinc-50 rounded hover:bg-zinc-200 font-semibold text-zinc-800"
