@@ -1,4 +1,5 @@
 "use client";
+
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useAuth, db } from "@/firebase";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -12,13 +13,16 @@ import {
   deleteDoc,
   arrayRemove,
   addDoc,
+  limit,
+  getDocs,
+  startAfter,
 } from "firebase/firestore";
 import { useCollectionData } from "react-firebase-hooks/firestore";
 import Linkify from "react-linkify";
 import CreateNote from "@/components/CreateNote";
 import Sidebar from "@/components/Sidebar";
 import NoteModal from "@/components/NoteModal";
-// import InfiniteScroll from "react-infinite-scroll-component";
+import InfiniteScroll from "react-infinite-scroll-component";
 
 //used to get document ids of the labels
 const labelsConverter = {
@@ -83,6 +87,20 @@ export const CustomLink = (props) => {
 function Main() {
   const { user, loading: authLoading } = useAuth();
 
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  // const labelQuery = searchParams.get("label");
+
+  // const [notesWithLabelNames, setNotesWithLabelNames] = useState([]);
+  const [showNoteModal, setShowNoteModal] = useState(false);
+  const [currentNote, setCurrentNote] = useState({});
+  const [currentNoteLabelObjects, setCurrentNoteLabelObjects] = useState([]);
+  const [activeTooltip, setActiveTooltip] = useState("");
+
+  const [notes, setNotes] = useState([]);
+  const [hasMoreNotes, setHasMoreNotes] = useState(true);
+  const [lastVisibleNote, setLastVisibleNote] = useState(null);
+
   const labelsRef = query(
     collection(db, `users/${user?.uid}/labels`).withConverter(labelsConverter),
     orderBy("name", "asc")
@@ -90,59 +108,114 @@ function Main() {
   const [labelsData] = useCollectionData(labelsRef);
 
   // Fetch notes with label IDs
-  const notesRef = query(
-    collection(db, `users/${user?.uid}/notes`).withConverter(notesConverter),
-    orderBy("updated_at", "desc")
-  );
-  const [notesData] = useCollectionData(notesRef);
+  // const notesRef = query(
+  //   collection(db, `users/${user?.uid}/notes`).withConverter(notesConverter),
+  //   orderBy("updated_at", "desc"),
+  //   limit(5)
+  // );
+  // const [notesData] = useCollectionData(notesRef);
 
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const labelQuery = searchParams.get("label");
+  // const getNoteWithLabelNames = useCallback(
+  //   (note) => {
+  //     const labelNames = note.labels
+  //       .map(
+  //         (labelId) => labelsData.find((label) => label.id === labelId)?.name
+  //       )
+  //       .filter((labelName) => labelName !== undefined);
 
-  const [notesWithLabelNames, setNotesWithLabelNames] = useState([]);
-  const [showNoteModal, setShowNoteModal] = useState(false);
-  const [currentNote, setCurrentNote] = useState({});
-  const [currentNoteLabelObjects, setCurrentNoteLabelObjects] = useState([]);
-  const [activeTooltip, setActiveTooltip] = useState("");
+  //     return {
+  //       id: note.id,
+  //       ...note,
+  //       labels: labelNames,
+  //     };
+  //   },
+  //   [labelsData]
+  // );
 
-  const getNoteWithLabelNames = useCallback(
-    (note) => {
-      const labelNames = note.labels
-        .map(
-          (labelId) => labelsData.find((label) => label.id === labelId)?.name
-        )
-        .filter((labelName) => labelName !== undefined);
+  // const filteredNotes = useMemo(() => {
+  //   if (!labelQuery) {
+  //     return notesWithLabelNames;
+  //   }
+  //   // Find the label name corresponding to the selected label id
+  //   const selectedLabelName = labelsData?.find(
+  //     (label) => label.id === labelQuery
+  //   )?.name;
+  //   // Filter the notes based on the selected label name
+  //   return notesWithLabelNames.filter((note) =>
+  //     note.labels.includes(selectedLabelName)
+  //   );
+  // }, [notesWithLabelNames, labelQuery, labelsData]);
 
-      return {
-        id: note.id,
-        ...note,
-        labels: labelNames,
-      };
-    },
-    [labelsData]
-  );
-
-  const filteredNotes = useMemo(() => {
-    if (!labelQuery) {
-      return notesWithLabelNames;
-    }
-    // Find the label name corresponding to the selected label id
-    const selectedLabelName = labelsData?.find(
-      (label) => label.id === labelQuery
-    )?.name;
-    // Filter the notes based on the selected label name
-    return notesWithLabelNames.filter((note) =>
-      note.labels.includes(selectedLabelName)
-    );
-  }, [notesWithLabelNames, labelQuery, labelsData]);
+  // useEffect(() => {
+  //   if (notesData && labelsData) {
+  //     const updatedNotesWithLabelNames = notesData.map(getNoteWithLabelNames);
+  //     setNotesWithLabelNames(updatedNotesWithLabelNames);
+  //   }
+  // }, [notesData, labelsData, getNoteWithLabelNames]);
 
   useEffect(() => {
-    if (notesData && labelsData) {
-      const updatedNotesWithLabelNames = notesData.map(getNoteWithLabelNames);
-      setNotesWithLabelNames(updatedNotesWithLabelNames);
+    const fetchNotes = async () => {
+      console.log("fetchNotes hasMoreNotes", hasMoreNotes);
+
+      if (user?.uid) {
+        const notesRef = query(
+          collection(db, `users/${user?.uid}/notes`).withConverter(
+            notesConverter
+          ),
+          orderBy("updated_at", "desc"),
+          limit(5)
+        );
+
+        console.log("Running Firestore query...");
+        const snapshot = await getDocs(notesRef);
+        console.log("Snapshot received. Checking if it's empty...");
+        console.log("snapshot.empty:", snapshot.empty);
+        console.log("snapshot.size:", snapshot.size);
+        if (!snapshot.empty) {
+          const lastVisible = snapshot.docs[snapshot.docs.length - 1];
+          console.log("lastVisible:", lastVisible);
+          const newNotes = snapshot.docs.map((doc) => doc.data());
+          console.log("newNotes:", newNotes);
+          console.log("Setting last visible note and notes...");
+          setLastVisibleNote(lastVisible);
+          setNotes(newNotes);
+          console.log("Notes set.");
+        } else {
+          console.log("Snapshot was empty. Setting hasMoreNotes to false...");
+          setHasMoreNotes(false);
+        }
+        console.log("fetcNotes hasMoreNotes end", hasMoreNotes);
+      } else {
+        console.log("user?.uid was undefined.");
+      }
+    };
+
+    if (user?.uid) {
+      fetchNotes();
     }
-  }, [notesData, labelsData, getNoteWithLabelNames]);
+  }, [user?.uid]);
+
+  const fetchMoreNotes = async () => {
+    console.log("fetchMoreNotes hasMoreNotes", hasMoreNotes);
+    const nextNotesRef = query(
+      collection(db, `users/${user?.uid}/notes`).withConverter(notesConverter),
+      orderBy("updated_at", "desc"),
+      startAfter(lastVisibleNote),
+      limit(5)
+    );
+
+    const snapshot = await getDocs(nextNotesRef);
+
+    if (!snapshot.empty) {
+      const lastVisible = snapshot.docs[snapshot.docs.length - 1];
+      const newNotes = snapshot.docs.map((doc) => doc.data());
+
+      setLastVisibleNote(lastVisible);
+      setNotes((prevNotes) => [...prevNotes, ...newNotes]);
+    } else {
+      setHasMoreNotes(false);
+    }
+  };
 
   useEffect(() => {
     if (currentNote && currentNote.labels && labelsData) {
@@ -273,107 +346,121 @@ function Main() {
       <div className="w-full pl-64">
         <CreateNote labelsData={labelsData} onCreateLabel={createLabel} />
         <div className="my-12 px-10">
-          {filteredNotes?.map((note) => (
-            <div
-              key={note.id}
-              onClick={() => {
-                console.log(note.id);
-                setCurrentNote(note);
-                setShowNoteModal(true);
-              }}
-              className="relative bg-zinc-900 p-4 rounded shadow mb-6 note-hover border-2 border-transparent hover:border-zinc-200 text-white"
-            >
-              {/* Note title */}
-              {note.title && (
-                <h3 className="text-lg font-semibold mb-2">{note.title}</h3>
-              )}
-              {/* Note content */}
-              <p className="text-zinc-200 mb-2 overflow-hidden whitespace-nowrap overflow-ellipsis">
-                <Linkify
-                  componentDecorator={(decoratedHref, decoratedText, key) => (
-                    <CustomLink key={key} href={decoratedHref}>
-                      {decoratedText}
-                    </CustomLink>
-                  )}
-                >
-                  {note.content}
-                </Linkify>
+          <InfiniteScroll
+            dataLength={notes.length} //This is important field to render the next data
+            next={fetchMoreNotes}
+            hasMore={hasMoreNotes}
+            loader={<h4>Loading...</h4>}
+            endMessage={
+              <p style={{ textAlign: "center" }}>
+                <b>End of notes</b>
               </p>
-              {/* Note labels */}
-              <div className="flex flex-wrap">
+            }
+          >
+            {notes?.map((note) => (
+              <div
+                key={note.id}
+                onClick={() => {
+                  console.log(note.id);
+                  setCurrentNote(note);
+                  setShowNoteModal(true);
+                }}
+                className="relative bg-zinc-900 p-4 rounded shadow mb-6 note-hover border-2 border-transparent hover:border-zinc-200 text-white"
+              >
+                {/* Note title */}
+                {note.title && (
+                  <h3 className="text-lg font-semibold mb-2">{note.title}</h3>
+                )}
+                {/* Note content */}
+                <p className="text-zinc-200 mb-2 overflow-hidden whitespace-nowrap overflow-ellipsis">
+                  <Linkify
+                    componentDecorator={(decoratedHref, decoratedText, key) => (
+                      <CustomLink key={key} href={decoratedHref}>
+                        {decoratedText}
+                      </CustomLink>
+                    )}
+                  >
+                    {note.content}
+                  </Linkify>
+                </p>
+                {/* Note labels */}
                 <div className="flex flex-wrap">
-                  {note.labels.map((labelName) => {
-                    const labelId = labelsData?.find(
-                      (label) => label.name === labelName
-                    )?.id;
-                    return (
-                      <div
-                        key={labelName}
-                        className="relative flex items-center bg-gray-200 rounded px-2 py-1 mr-2 mb-2 label-hover"
-                      >
-                        <span className="px-1 py-0.5 text-xs text-gray-700 bg-gray-200 rounded-full truncate transition-all duration-200">
-                          {labelName}
-                        </span>
-                        <button
-                          className="absolute right-0 mr-1 focus:outline-none opacity-0 label-hover-child transition-opacity duration-200 bg-zinc-900 rounded-full"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            removeLabelFromNote(note.id, labelId);
-                          }}
+                  <div className="flex flex-wrap">
+                    {note.labels.map((labelName) => {
+                      const labelId = labelsData?.find(
+                        (label) => label.name === labelName
+                      )?.id;
+                      return (
+                        <div
+                          key={labelName}
+                          className="relative flex items-center bg-gray-200 rounded px-2 py-1 mr-2 mb-2 label-hover"
                         >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="16"
-                            height="16"
-                            viewBox="0 0 24 24"
+                          <span className="px-1 py-0.5 text-xs text-gray-700 bg-gray-200 rounded-full truncate transition-all duration-200">
+                            {labelName}
+                          </span>
+                          <button
+                            className="absolute right-0 mr-1 focus:outline-none opacity-0 label-hover-child transition-opacity duration-200 bg-zinc-900 rounded-full"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              removeLabelFromNote(note.id, labelId);
+                            }}
                           >
-                            <path
-                              fill="currentColor"
-                              d="M6.4 19L5 17.6l5.6-5.6L5 6.4L6.4 5l5.6 5.6L17.6 5L19 6.4L13.4 12l5.6 5.6l-1.4 1.4l-5.6-5.6L6.4 19Z"
-                            />
-                          </svg>
-                        </button>
-                      </div>
-                    );
-                  })}
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              width="16"
+                              height="16"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                fill="currentColor"
+                                d="M6.4 19L5 17.6l5.6-5.6L5 6.4L6.4 5l5.6 5.6L17.6 5L19 6.4L13.4 12l5.6 5.6l-1.4 1.4l-5.6-5.6L6.4 19Z"
+                              />
+                            </svg>
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+                {/* Delete note button */}
+                <div>
+                  <button
+                    className="absolute bottom-0 right-0 m-1 focus:outline-none opacity-0 note-hover-child transition-opacity duration-200 hover:text-red-500"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      deleteNote(note.id);
+                    }}
+                    onMouseEnter={() =>
+                      setActiveTooltip(`deleteNote-${note.id}`)
+                    }
+                    onMouseLeave={() => setActiveTooltip("")}
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        fill="currentColor"
+                        d="M16 9v10H8V9h8m-1.5-6h-5l-1 1H5v2h14V4h-3.5l-1-1zM18 7H6v12c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7z"
+                      />
+                    </svg>
+                  </button>
+                  {/* Tooltip for Delete Note button */}
+                  <span
+                    className={`absolute top-auto mt-3 right-0 bg-zinc-700 text-white text-xs px-2 py-1 rounded ${
+                      activeTooltip === `deleteNote-${note.id}`
+                        ? "opacity-100"
+                        : "opacity-0"
+                    } transition-opacity duration-200`}
+                  >
+                    Delete Note
+                  </span>
                 </div>
               </div>
-              {/* Delete note button */}
-              <div>
-                <button
-                  className="absolute bottom-0 right-0 m-1 focus:outline-none opacity-0 note-hover-child transition-opacity duration-200 hover:text-red-500"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    deleteNote(note.id);
-                  }}
-                  onMouseEnter={() => setActiveTooltip(`deleteNote-${note.id}`)}
-                  onMouseLeave={() => setActiveTooltip("")}
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      fill="currentColor"
-                      d="M16 9v10H8V9h8m-1.5-6h-5l-1 1H5v2h14V4h-3.5l-1-1zM18 7H6v12c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7z"
-                    />
-                  </svg>
-                </button>
-                {/* Tooltip for Delete Note button */}
-                <span
-                  className={`absolute top-auto mt-3 right-0 bg-zinc-700 text-white text-xs px-2 py-1 rounded ${
-                    activeTooltip === `deleteNote-${note.id}`
-                      ? "opacity-100"
-                      : "opacity-0"
-                  } transition-opacity duration-200`}
-                >
-                  Delete Note
-                </span>
-              </div>
-            </div>
-          ))}
+            ))}
+          </InfiniteScroll>
         </div>
       </div>
       <NoteModal
