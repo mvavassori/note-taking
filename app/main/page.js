@@ -100,6 +100,8 @@ function Main() {
   const [notes, setNotes] = useState([]);
   const [hasMoreNotes, setHasMoreNotes] = useState(true);
   const [lastVisibleNote, setLastVisibleNote] = useState(null);
+  const [lastScrollVisibleNote, setLastScrollVisibleNote] = useState(null);
+  const [lastFetchedNote, setLastFetchedNote] = useState(null);
 
   const labelsRef = query(
     collection(db, `users/${user?.uid}/labels`).withConverter(labelsConverter),
@@ -117,6 +119,7 @@ function Main() {
 
   // const getNoteWithLabelNames = useCallback(
   //   (note) => {
+  //     console.log("note.labels", note.labels);
   //     const labelNames = note.labels
   //       .map(
   //         (labelId) => labelsData.find((label) => label.id === labelId)?.name
@@ -147,75 +150,11 @@ function Main() {
   // }, [notesWithLabelNames, labelQuery, labelsData]);
 
   // useEffect(() => {
-  //   if (notesData && labelsData) {
-  //     const updatedNotesWithLabelNames = notesData.map(getNoteWithLabelNames);
+  //   if (notes && labelsData) {
+  //     const updatedNotesWithLabelNames = notesWithLabelNames.map(getNoteWithLabelNames);
   //     setNotesWithLabelNames(updatedNotesWithLabelNames);
   //   }
-  // }, [notesData, labelsData, getNoteWithLabelNames]);
-
-  useEffect(() => {
-    const fetchNotes = async () => {
-      console.log("fetchNotes hasMoreNotes", hasMoreNotes);
-
-      if (user?.uid) {
-        const notesRef = query(
-          collection(db, `users/${user?.uid}/notes`).withConverter(
-            notesConverter
-          ),
-          orderBy("updated_at", "desc"),
-          limit(5)
-        );
-
-        console.log("Running Firestore query...");
-        const snapshot = await getDocs(notesRef);
-        console.log("Snapshot received. Checking if it's empty...");
-        console.log("snapshot.empty:", snapshot.empty);
-        console.log("snapshot.size:", snapshot.size);
-        if (!snapshot.empty) {
-          const lastVisible = snapshot.docs[snapshot.docs.length - 1];
-          console.log("lastVisible:", lastVisible);
-          const newNotes = snapshot.docs.map((doc) => doc.data());
-          console.log("newNotes:", newNotes);
-          console.log("Setting last visible note and notes...");
-          setLastVisibleNote(lastVisible);
-          setNotes(newNotes);
-          console.log("Notes set.");
-        } else {
-          console.log("Snapshot was empty. Setting hasMoreNotes to false...");
-          setHasMoreNotes(false);
-        }
-        console.log("fetcNotes hasMoreNotes end", hasMoreNotes);
-      } else {
-        console.log("user?.uid was undefined.");
-      }
-    };
-
-    if (user?.uid) {
-      fetchNotes();
-    }
-  }, [user?.uid]);
-
-  const fetchMoreNotes = async () => {
-    console.log("fetchMoreNotes hasMoreNotes", hasMoreNotes);
-    const nextNotesRef = query(
-      collection(db, `users/${user?.uid}/notes`).withConverter(notesConverter),
-      orderBy("updated_at", "desc"),
-      startAfter(lastVisibleNote),
-      limit(5)
-    );
-
-    const snapshot = await getDocs(nextNotesRef);
-
-    if (!snapshot.empty) {
-      const lastVisible = snapshot.docs[snapshot.docs.length - 1];
-      const newNotes = snapshot.docs.map((doc) => doc.data());
-
-      setLastVisibleNote(lastVisible);
-      setNotes((prevNotes) => [...prevNotes, ...newNotes]);
-    } else {
-      setHasMoreNotes(false);
-    }
-  };
+  // }, [notes, labelsData, getNoteWithLabelNames]);
 
   useEffect(() => {
     if (currentNote && currentNote.labels && labelsData) {
@@ -226,6 +165,134 @@ function Main() {
       setCurrentNoteLabelObjects(newCurrentNoteLabelObjects);
     }
   }, [currentNote, labelsData]);
+
+  useEffect(() => {
+    const fetchNotes = async () => {
+      if (user?.uid) {
+        const labels = await fetchLabels(); // Fetch labels here
+
+        const notesRef = query(
+          collection(db, `users/${user?.uid}/notes`).withConverter(
+            notesConverter
+          ),
+          orderBy("updated_at", "desc"),
+          limit(5)
+        );
+
+        const snapshot = await getDocs(notesRef);
+
+        if (!snapshot.empty) {
+          const lastVisible = snapshot.docs[snapshot.docs.length - 1];
+          const newNotes = snapshot.docs.map((doc) => {
+            const note = doc.data();
+            note.labels = getLabelNames(note.labels, labels); // Pass labels here
+            return note;
+          });
+
+          setLastVisibleNote(lastVisible);
+          setLastScrollVisibleNote(lastVisible);
+          setNotes(newNotes);
+        } else {
+          setHasMoreNotes(false);
+        }
+      }
+    };
+
+    setNotes([]);
+
+    if (user?.uid) {
+      fetchNotes();
+    }
+  }, [user?.uid]);
+
+  // useEffect(() => {
+  //   const fetchNotes = async () => {
+  //     if (user?.uid && labelsData) {
+  //       const notesRef = query(
+  //         collection(db, `users/${user?.uid}/notes`).withConverter(
+  //           notesConverter
+  //         ),
+  //         orderBy("updated_at", "desc"),
+  //         limit(5)
+  //       );
+
+  //       const snapshot = await getDocs(notesRef);
+
+  //       if (!snapshot.empty) {
+  //         const lastVisible = snapshot.docs[snapshot.docs.length - 1];
+  //         const newNotes = snapshot.docs.map((doc) => {
+  //           const note = doc.data();
+  //           note.labels = getLabelNames(note.labels);
+  //           return note;
+  //         });
+
+  //         setLastVisibleNote(lastVisible);
+  //         setLastScrollVisibleNote(lastVisible);
+  //         setNotes(newNotes);
+  //       } else {
+  //         setHasMoreNotes(false);
+  //       }
+  //     }
+  //   };
+
+  //   setNotes([]);
+
+  //   if (user?.uid && labelsData) {
+  //     fetchNotes();
+  //   }
+  // }, [user?.uid, labelsData]);
+
+  const fetchMoreNotes = async () => {
+    const labels = await fetchLabels(); // Fetch labels here
+    const nextNotesRef = query(
+      collection(db, `users/${user?.uid}/notes`).withConverter(notesConverter),
+      orderBy("updated_at", "desc"),
+      startAfter(lastFetchedNote || lastVisibleNote),
+      limit(5)
+    );
+
+    const snapshot = await getDocs(nextNotesRef);
+
+    if (!snapshot.empty) {
+      const lastVisible = snapshot.docs[snapshot.docs.length - 1];
+      const newNotes = snapshot.docs.map((doc) => {
+        const note = doc.data();
+        note.labels = getLabelNames(note.labels, labels);
+        return note;
+      });
+
+      setLastFetchedNote(lastVisible);
+      setNotes((prevNotes) => [...prevNotes, ...newNotes]);
+    } else {
+      setHasMoreNotes(false);
+    }
+  };
+
+  // const getLabelNames = (labelIds) => {
+  //   return labelIds
+  //     .map((id) => {
+  //       const label = labelsData?.find((label) => label.id === id);
+  //       return label ? label.name : null;
+  //     })
+  //     .filter((name) => name); // This will remove any null values
+  // };
+
+  const getLabelNames = (labelIds, labels) => {
+    return labelIds.map((id) => labels?.find((label) => label.id === id)?.name);
+  };
+
+  const fetchLabels = async () => {
+    const labelsRef = query(
+      collection(db, `users/${user?.uid}/labels`).withConverter(
+        labelsConverter
+      ),
+      orderBy("name", "asc")
+    );
+
+    const labelsSnapshot = await getDocs(labelsRef);
+    const labels = labelsSnapshot.docs.map((doc) => doc.data());
+    return labels;
+  };
 
   const getLabelObjects = (currentNoteLabels, allLabelsData) => {
     return currentNoteLabels
@@ -257,25 +324,78 @@ function Main() {
     }
   };
 
+  const createNote = async (newNote) => {
+    // Add the new note to the notes collection
+    try {
+      const newNoteData = {
+        title: newNote.title,
+        content: newNote.content,
+        labels: getLabelNames(newNote.labels),
+        links: newNote.links,
+        created_at: serverTimestamp(),
+        updated_at: serverTimestamp(),
+      };
+
+      const docRef = await addDoc(collection(db, `users/${user?.uid}/notes`), {
+        title: newNote.title,
+        content: newNote.content,
+        labels: newNote.labels,
+        links: newNote.links,
+        created_at: serverTimestamp(),
+        updated_at: serverTimestamp(),
+      });
+      // Include the new note at the beginning of the notes list
+      setNotes((prevNotes) => [
+        { id: docRef.id, ...newNoteData },
+        ...prevNotes,
+      ]);
+    } catch (error) {
+      console.error("Error adding note: ", error);
+    }
+  };
+
   const updateNote = async (updatedNote) => {
     try {
       const noteRef = doc(db, `users/${user?.uid}/notes`, updatedNote.id);
       const updatedData = {
         title: updatedNote.title,
         content: updatedNote.content,
-        labels: updatedNote.labels,
+        labels: getLabelNames(updatedNote.labels),
         updated_at: serverTimestamp(),
       };
-      await updateDoc(noteRef, updatedData);
+      await updateDoc(noteRef, {
+        title: updatedNote.title,
+        content: updatedNote.content,
+        labels: updatedNote.labels,
+        updated_at: serverTimestamp(),
+      });
+
+      // Create a new note object that merges the old note with the updated fields
+      const newNote = { ...updatedNote, ...updatedData };
+
+      // Manually update the notes state
+      setNotes((prevNotes) => {
+        // Remove the updated note from its current position in the array
+        const newNotes = prevNotes.filter((note) => note.id !== updatedNote.id);
+
+        // Add the updated note to the beginning of the array
+        newNotes.unshift(newNote);
+
+        return newNotes;
+      });
     } catch (error) {
       console.error("Error updating the note: ", error);
     }
   };
 
   const deleteNote = async (noteId) => {
+    console.log("deleteNote clicked");
     try {
       const noteRef = doc(db, `users/${user?.uid}/notes`, noteId);
       await deleteDoc(noteRef);
+      console.log("Note deleted successfully.", noteId);
+      // Remove the deleted note from the notes state
+      setNotes((prevNotes) => prevNotes.filter((note) => note.id !== noteId));
     } catch (error) {
       console.error("Error deleting the note: ", error);
     }
@@ -295,7 +415,6 @@ function Main() {
     try {
       const labelRef = doc(db, `users/${user?.uid}/labels`, labelId);
       await deleteDoc(labelRef);
-      // Update labelsData in the parent component's state after deleting from Firestore.
     } catch (error) {
       console.error("Error deleting the label: ", error);
     }
@@ -344,7 +463,11 @@ function Main() {
         onCreateLabel={createLabel}
       />
       <div className="w-full pl-64">
-        <CreateNote labelsData={labelsData} onCreateLabel={createLabel} />
+        <CreateNote
+          labelsData={labelsData}
+          onCreateLabel={createLabel}
+          onCreateNote={createNote}
+        />
         <div className="my-12 px-10">
           <InfiniteScroll
             dataLength={notes.length} //This is important field to render the next data
@@ -361,7 +484,7 @@ function Main() {
               <div
                 key={note.id}
                 onClick={() => {
-                  console.log(note.id);
+                  console.log(note);
                   setCurrentNote(note);
                   setShowNoteModal(true);
                 }}
@@ -387,9 +510,9 @@ function Main() {
                 <div className="flex flex-wrap">
                   <div className="flex flex-wrap">
                     {note.labels.map((labelName) => {
-                      const labelId = labelsData?.find(
-                        (label) => label.name === labelName
-                      )?.id;
+                      // const labelId = labelsData?.find(
+                      //   (label) => label.name === labelName
+                      // )?.id;
                       return (
                         <div
                           key={labelName}
@@ -402,7 +525,10 @@ function Main() {
                             className="absolute right-0 mr-1 focus:outline-none opacity-0 label-hover-child transition-opacity duration-200 bg-zinc-900 rounded-full"
                             onClick={(e) => {
                               e.stopPropagation();
-                              removeLabelFromNote(note.id, labelId);
+                              console.log("note.id", note.id);
+                              console.log("labelId", labelId);
+                              console.log("labelsData", labelsData);
+                              // removeLabelFromNote(note.id, labelId);
                             }}
                           >
                             <svg

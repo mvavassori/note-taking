@@ -12,7 +12,7 @@ const extractLinks = (noteContent) => {
   return links;
 };
 
-export default function CreateNote({ labelsData }) {
+export default function CreateNote({ labelsData, onCreateNote }) {
   const { user } = useAuth();
 
   const [title, setTitle] = useState("");
@@ -121,7 +121,7 @@ export default function CreateNote({ labelsData }) {
     }
   };
 
-  const saveNote = async () => {
+  const handleCreateNote = async () => {
     // Fetch the label document IDs for the selected labels
     const selectedLabelIds = labels
       .filter((label) => selectedLabels.includes(label.name))
@@ -140,24 +140,30 @@ export default function CreateNote({ labelsData }) {
     };
 
     console.log("New note data: ", newNote);
+    onCreateNote(newNote);
 
-    // Add the new note to the notes collection
-    try {
-      await addDoc(collection(db, `users/${user?.uid}/notes`), {
-        title,
-        content,
-        labels: selectedLabelIds,
-        links,
-        created_at: serverTimestamp(),
-        updated_at: serverTimestamp(),
-      });
-      setTitle("");
-      setContent("");
-      setSelectedLabels([]);
-      setShowTitleAndButtons(false);
-    } catch (error) {
-      console.error("Error adding note: ", error);
-    }
+    setTitle("");
+    setContent("");
+    setSelectedLabels([]);
+    setShowTitleAndButtons(false);
+
+    // // Add the new note to the notes collection
+    // try {
+    //   await addDoc(collection(db, `users/${user?.uid}/notes`), {
+    //     title,
+    //     content,
+    //     labels: selectedLabelIds,
+    //     links,
+    //     created_at: serverTimestamp(),
+    //     updated_at: serverTimestamp(),
+    //   });
+    //   setTitle("");
+    //   setContent("");
+    //   setSelectedLabels([]);
+    //   setShowTitleAndButtons(false);
+    // } catch (error) {
+    //   console.error("Error adding note: ", error);
+    // }
   };
 
   const handleCancel = () => {
@@ -281,7 +287,7 @@ export default function CreateNote({ labelsData }) {
                   ? "opacity-50 cursor-not-allowed bg-zinc-50 hover:bg-zinc-50 text-zinc-800"
                   : "bg-zinc-50 hover:bg-blue-100 hover:text-blue-700"
               }`}
-              onClick={saveNote}
+              onClick={handleCreateNote}
               disabled={saveButtonDisabled}
             >
               Save

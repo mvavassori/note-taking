@@ -110,7 +110,7 @@ const NoteModal = ({
     }
   };
 
-  const handleSaveChanges = () => {
+  const handleUpdateNote = () => {
     const selectedLabelIds = selectedLabels.map((label) => label.id);
 
     const updatedNote = {
@@ -146,7 +146,7 @@ const NoteModal = ({
 
   return (
     <div
-      className={`fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center transition-opacity ${
+      className={`fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center transition-opacity z-30 ${
         showNoteModal ? "opacity-100" : "opacity-0 pointer-events-none"
       }`}
       onClick={handleClickOutside}
@@ -244,7 +244,7 @@ const NoteModal = ({
             </button>
             <button
               className="py-1 px-2 rounded font-semibold bg-zinc-50 hover:bg-blue-100 hover:text-blue-700"
-              onClick={handleSaveChanges}
+              onClick={handleUpdateNote}
             >
               Save
             </button>
