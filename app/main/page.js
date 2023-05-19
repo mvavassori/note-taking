@@ -16,6 +16,7 @@ import {
   limit,
   getDocs,
   startAfter,
+  where,
 } from "firebase/firestore";
 import { useCollectionData } from "react-firebase-hooks/firestore";
 import Linkify from "react-linkify";
@@ -89,7 +90,7 @@ function Main() {
 
   const router = useRouter();
   const searchParams = useSearchParams();
-  // const labelQuery = searchParams.get("label");
+  const labelQuery = searchParams.get("label");
 
   // const [notesWithLabelNames, setNotesWithLabelNames] = useState([]);
   const [showNoteModal, setShowNoteModal] = useState(false);
@@ -100,7 +101,6 @@ function Main() {
   const [notes, setNotes] = useState([]);
   const [hasMoreNotes, setHasMoreNotes] = useState(true);
   const [lastVisibleNote, setLastVisibleNote] = useState(null);
-  const [lastScrollVisibleNote, setLastScrollVisibleNote] = useState(null);
   const [lastFetchedNote, setLastFetchedNote] = useState(null);
 
   const labelsRef = query(
@@ -171,15 +171,30 @@ function Main() {
       if (user?.uid) {
         const labels = await fetchLabels(); // Fetch labels here
 
-        const notesRef = query(
-          collection(db, `users/${user?.uid}/notes`).withConverter(
-            notesConverter
-          ),
-          orderBy("updated_at", "desc"),
-          limit(5)
-        );
+        // const notesRef = query(
+        //   collection(db, `users/${user?.uid}/notes`).withConverter(
+        //     notesConverter
+        //   ),
+        //   orderBy("updated_at", "desc"),
+        //   limit(5)
+        // );
 
-        const snapshot = await getDocs(notesRef);
+        let notesQuery = collection(
+          db,
+          `users/${user?.uid}/notes`
+        ).withConverter(notesConverter);
+
+        // If a label filter is set, adjust the query
+        if (labelQuery) {
+          notesQuery = query(
+            notesQuery,
+            where("labels", "array-contains", labelQuery)
+          );
+        }
+
+        notesQuery = query(notesQuery, orderBy("updated_at", "desc"), limit(5));
+
+        const snapshot = await getDocs(notesQuery);
 
         if (!snapshot.empty) {
           const lastVisible = snapshot.docs[snapshot.docs.length - 1];
@@ -190,7 +205,6 @@ function Main() {
           });
 
           setLastVisibleNote(lastVisible);
-          setLastScrollVisibleNote(lastVisible);
           setNotes(newNotes);
         } else {
           setHasMoreNotes(false);
@@ -203,55 +217,62 @@ function Main() {
     if (user?.uid) {
       fetchNotes();
     }
-  }, [user?.uid]);
+  }, [user?.uid, labelQuery]);
 
-  // useEffect(() => {
-  //   const fetchNotes = async () => {
-  //     if (user?.uid && labelsData) {
-  //       const notesRef = query(
-  //         collection(db, `users/${user?.uid}/notes`).withConverter(
-  //           notesConverter
-  //         ),
-  //         orderBy("updated_at", "desc"),
-  //         limit(5)
-  //       );
-
-  //       const snapshot = await getDocs(notesRef);
-
-  //       if (!snapshot.empty) {
-  //         const lastVisible = snapshot.docs[snapshot.docs.length - 1];
-  //         const newNotes = snapshot.docs.map((doc) => {
-  //           const note = doc.data();
-  //           note.labels = getLabelNames(note.labels);
-  //           return note;
-  //         });
-
-  //         setLastVisibleNote(lastVisible);
-  //         setLastScrollVisibleNote(lastVisible);
-  //         setNotes(newNotes);
-  //       } else {
-  //         setHasMoreNotes(false);
-  //       }
-  //     }
-  //   };
-
-  //   setNotes([]);
-
-  //   if (user?.uid && labelsData) {
-  //     fetchNotes();
-  //   }
-  // }, [user?.uid, labelsData]);
+  useEffect(() => {
+    setHasMoreNotes(true);
+    setLastFetchedNote(null);
+    setLastVisibleNote(null);
+  }, [labelQuery]);
 
   const fetchMoreNotes = async () => {
     const labels = await fetchLabels(); // Fetch labels here
-    const nextNotesRef = query(
-      collection(db, `users/${user?.uid}/notes`).withConverter(notesConverter),
-      orderBy("updated_at", "desc"),
-      startAfter(lastFetchedNote || lastVisibleNote),
-      limit(5)
-    );
 
-    const snapshot = await getDocs(nextNotesRef);
+    // let nextNotesQuery = collection(
+    //   db,
+    //   `users/${user?.uid}/notes`
+    // ).withConverter(notesConverter);
+
+    // // If a label filter is set, adjust the query
+    // if (labelQuery) {
+    //   nextNotesQuery = query(
+    //     nextNotesQuery,
+    //     where("labels", "array-contains", labelQuery)
+    //   );
+    // }
+
+    // nextNotesQuery = query(
+    //   nextNotesQuery,
+    //   orderBy("updated_at", "desc"),
+    //   startAfter(lastFetchedNote || lastVisibleNote),
+    //   limit(5)
+    // );
+
+    // const filterLabelId = searchParams.get("label");
+
+    let nextNotesQuery;
+    if (labelQuery) {
+      nextNotesQuery = query(
+        collection(db, `users/${user?.uid}/notes`).withConverter(
+          notesConverter
+        ),
+        where("labels", "array-contains", labelQuery),
+        orderBy("updated_at", "desc"),
+        startAfter(lastFetchedNote || lastVisibleNote),
+        limit(5)
+      );
+    } else {
+      nextNotesQuery = query(
+        collection(db, `users/${user?.uid}/notes`).withConverter(
+          notesConverter
+        ),
+        orderBy("updated_at", "desc"),
+        startAfter(lastFetchedNote || lastVisibleNote),
+        limit(5)
+      );
+    }
+
+    const snapshot = await getDocs(nextNotesQuery);
 
     if (!snapshot.empty) {
       const lastVisible = snapshot.docs[snapshot.docs.length - 1];
@@ -325,12 +346,12 @@ function Main() {
   };
 
   const createNote = async (newNote) => {
-    // Add the new note to the notes collection
+    const labels = await fetchLabels(); // Fetch labels here
     try {
       const newNoteData = {
         title: newNote.title,
         content: newNote.content,
-        labels: getLabelNames(newNote.labels),
+        labels: getLabelNames(newNote.labels, labels),
         links: newNote.links,
         created_at: serverTimestamp(),
         updated_at: serverTimestamp(),
@@ -470,7 +491,7 @@ function Main() {
         />
         <div className="my-12 px-10">
           <InfiniteScroll
-            dataLength={notes.length} //This is important field to render the next data
+            dataLength={notes.length}
             next={fetchMoreNotes}
             hasMore={hasMoreNotes}
             loader={<h4>Loading...</h4>}

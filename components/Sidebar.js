@@ -15,7 +15,7 @@ const Sidebar = ({ labelsData, updateLabel, deleteLabel, onCreateLabel }) => {
         className={`text-left w-full text-white hover:bg-zinc-700 ${
           !labelQuery ? "bg-zinc-700" : ""
         } py-3 pl-8 rounded focus:outline-none font-medium flex`}
-        onClick={() => router.push("/main")}
+        onClick={() => router.replace("/main")}
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -38,7 +38,7 @@ const Sidebar = ({ labelsData, updateLabel, deleteLabel, onCreateLabel }) => {
                 className={`text-left w-full text-white hover:bg-zinc-700 ${
                   labelQuery === label.id ? "bg-zinc-700" : ""
                 } py-3 pl-8 rounded focus:outline-none font-medium flex`}
-                onClick={() => router.push(`/main?label=${label.id}`)}
+                onClick={() => router.replace(`/main?label=${label.id}`)}
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
