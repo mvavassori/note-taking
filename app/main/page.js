@@ -11,12 +11,12 @@ import {
   updateDoc,
   serverTimestamp,
   deleteDoc,
-  arrayRemove,
   addDoc,
   limit,
   getDocs,
   startAfter,
   where,
+  getDoc,
 } from "firebase/firestore";
 import { useCollectionData } from "react-firebase-hooks/firestore";
 import Linkify from "react-linkify";
@@ -71,7 +71,6 @@ export const CustomLink = (props) => {
   const handleClick = (event) => {
     event.stopPropagation();
   };
-
   return (
     <a
       href={props.href}
@@ -92,7 +91,6 @@ function Main() {
   const searchParams = useSearchParams();
   const labelQuery = searchParams.get("label");
 
-  // const [notesWithLabelNames, setNotesWithLabelNames] = useState([]);
   const [showNoteModal, setShowNoteModal] = useState(false);
   const [currentNote, setCurrentNote] = useState({});
   const [currentNoteLabelObjects, setCurrentNoteLabelObjects] = useState([]);
@@ -102,59 +100,13 @@ function Main() {
   const [hasMoreNotes, setHasMoreNotes] = useState(true);
   const [lastVisibleNote, setLastVisibleNote] = useState(null);
   const [lastFetchedNote, setLastFetchedNote] = useState(null);
+  const [isLoadingQuery, setIsLoadingQuery] = useState(false);
 
   const labelsRef = query(
     collection(db, `users/${user?.uid}/labels`).withConverter(labelsConverter),
     orderBy("name", "asc")
   );
   const [labelsData] = useCollectionData(labelsRef);
-
-  // Fetch notes with label IDs
-  // const notesRef = query(
-  //   collection(db, `users/${user?.uid}/notes`).withConverter(notesConverter),
-  //   orderBy("updated_at", "desc"),
-  //   limit(5)
-  // );
-  // const [notesData] = useCollectionData(notesRef);
-
-  // const getNoteWithLabelNames = useCallback(
-  //   (note) => {
-  //     console.log("note.labels", note.labels);
-  //     const labelNames = note.labels
-  //       .map(
-  //         (labelId) => labelsData.find((label) => label.id === labelId)?.name
-  //       )
-  //       .filter((labelName) => labelName !== undefined);
-
-  //     return {
-  //       id: note.id,
-  //       ...note,
-  //       labels: labelNames,
-  //     };
-  //   },
-  //   [labelsData]
-  // );
-
-  // const filteredNotes = useMemo(() => {
-  //   if (!labelQuery) {
-  //     return notesWithLabelNames;
-  //   }
-  //   // Find the label name corresponding to the selected label id
-  //   const selectedLabelName = labelsData?.find(
-  //     (label) => label.id === labelQuery
-  //   )?.name;
-  //   // Filter the notes based on the selected label name
-  //   return notesWithLabelNames.filter((note) =>
-  //     note.labels.includes(selectedLabelName)
-  //   );
-  // }, [notesWithLabelNames, labelQuery, labelsData]);
-
-  // useEffect(() => {
-  //   if (notes && labelsData) {
-  //     const updatedNotesWithLabelNames = notesWithLabelNames.map(getNoteWithLabelNames);
-  //     setNotesWithLabelNames(updatedNotesWithLabelNames);
-  //   }
-  // }, [notes, labelsData, getNoteWithLabelNames]);
 
   useEffect(() => {
     if (currentNote && currentNote.labels && labelsData) {
@@ -168,17 +120,9 @@ function Main() {
 
   useEffect(() => {
     const fetchNotes = async () => {
+      setIsLoadingQuery(true);
       if (user?.uid) {
-        const labels = await fetchLabels(); // Fetch labels here
-
-        // const notesRef = query(
-        //   collection(db, `users/${user?.uid}/notes`).withConverter(
-        //     notesConverter
-        //   ),
-        //   orderBy("updated_at", "desc"),
-        //   limit(5)
-        // );
-
+        const labels = await fetchLabels();
         let notesQuery = collection(
           db,
           `users/${user?.uid}/notes`
@@ -210,6 +154,7 @@ function Main() {
           setHasMoreNotes(false);
         }
       }
+      setIsLoadingQuery(false);
     };
 
     setNotes([]);
@@ -226,30 +171,8 @@ function Main() {
   }, [labelQuery]);
 
   const fetchMoreNotes = async () => {
-    const labels = await fetchLabels(); // Fetch labels here
-
-    // let nextNotesQuery = collection(
-    //   db,
-    //   `users/${user?.uid}/notes`
-    // ).withConverter(notesConverter);
-
-    // // If a label filter is set, adjust the query
-    // if (labelQuery) {
-    //   nextNotesQuery = query(
-    //     nextNotesQuery,
-    //     where("labels", "array-contains", labelQuery)
-    //   );
-    // }
-
-    // nextNotesQuery = query(
-    //   nextNotesQuery,
-    //   orderBy("updated_at", "desc"),
-    //   startAfter(lastFetchedNote || lastVisibleNote),
-    //   limit(5)
-    // );
-
-    // const filterLabelId = searchParams.get("label");
-
+    if (isLoadingQuery) return;
+    const labels = await fetchLabels();
     let nextNotesQuery;
     if (labelQuery) {
       nextNotesQuery = query(
@@ -289,17 +212,13 @@ function Main() {
     }
   };
 
-  // const getLabelNames = (labelIds) => {
-  //   return labelIds
-  //     .map((id) => {
-  //       const label = labelsData?.find((label) => label.id === id);
-  //       return label ? label.name : null;
-  //     })
-  //     .filter((name) => name); // This will remove any null values
-  // };
-
   const getLabelNames = (labelIds, labels) => {
     return labelIds.map((id) => labels?.find((label) => label.id === id)?.name);
+  };
+
+  const getLabelNameFromId = (labelId) => {
+    const labelObject = labelsData.find((label) => label.id === labelId);
+    return labelObject ? labelObject.name : labelId;
   };
 
   const fetchLabels = async () => {
@@ -334,14 +253,56 @@ function Main() {
       .filter((label) => label !== null); // Filter out null values if any
   };
 
-  const removeLabelFromNote = async (noteId, labelId) => {
-    try {
-      const noteRef = doc(db, `users/${user?.uid}/notes`, noteId);
-      await updateDoc(noteRef, {
-        labels: arrayRemove(labelId),
+  const removeLabelFromNote = async (noteId, labelNameToRemove) => {
+    // Fetch the label ID for the given label name
+    const labelToRemove = labelsData.find(
+      (label) => label.name === labelNameToRemove
+    );
+
+    if (!labelToRemove) {
+      console.error(`Label '${labelNameToRemove}' not found.`);
+      return;
+    }
+
+    const labelIdToRemove = labelToRemove.id;
+
+    // Remove this label ID from the note's labels field
+    const noteRef = doc(db, `users/${user?.uid}/notes`, noteId);
+    const noteSnapshot = await getDoc(noteRef);
+
+    if (!noteSnapshot.exists()) {
+      console.error(`Note with ID '${noteId}' not found.`);
+      return;
+    }
+
+    const noteData = noteSnapshot.data();
+    const updatedLabels = noteData.labels.filter(
+      (labelId) => labelId !== labelIdToRemove
+    );
+
+    // Update the local notes state
+    setNotes((prevNotes) => {
+      return prevNotes.map((note) => {
+        if (note.id === noteId) {
+          // This is the note we're updating. Return a new object with the updated labels.
+          return {
+            ...note,
+            labels: note.labels.filter(
+              (labelName) => labelName !== labelNameToRemove
+            ),
+          };
+        } else {
+          // This is not the note we've updated. Return it unchanged.
+          return note;
+        }
       });
+    });
+
+    try {
+      // Save the updated note to the Firestore
+      await updateDoc(noteRef, { labels: updatedLabels });
     } catch (error) {
-      console.error("Error removing the label from the note: ", error);
+      console.error("Error updating document: ", error);
     }
   };
 
@@ -381,7 +342,9 @@ function Main() {
       const updatedData = {
         title: updatedNote.title,
         content: updatedNote.content,
-        labels: getLabelNames(updatedNote.labels),
+        labels: updatedNote.labels.map((labelId) =>
+          getLabelNameFromId(labelId)
+        ),
         updated_at: serverTimestamp(),
       };
       await updateDoc(noteRef, {
@@ -391,16 +354,13 @@ function Main() {
         updated_at: serverTimestamp(),
       });
 
-      // Create a new note object that merges the old note with the updated fields
-      const newNote = { ...updatedNote, ...updatedData };
-
       // Manually update the notes state
       setNotes((prevNotes) => {
         // Remove the updated note from its current position in the array
         const newNotes = prevNotes.filter((note) => note.id !== updatedNote.id);
 
         // Add the updated note to the beginning of the array
-        newNotes.unshift(newNote);
+        newNotes.unshift(updatedData);
 
         return newNotes;
       });
@@ -495,11 +455,6 @@ function Main() {
             next={fetchMoreNotes}
             hasMore={hasMoreNotes}
             loader={<h4>Loading...</h4>}
-            endMessage={
-              <p style={{ textAlign: "center" }}>
-                <b>End of notes</b>
-              </p>
-            }
           >
             {notes?.map((note) => (
               <div
@@ -531,9 +486,6 @@ function Main() {
                 <div className="flex flex-wrap">
                   <div className="flex flex-wrap">
                     {note.labels.map((labelName) => {
-                      // const labelId = labelsData?.find(
-                      //   (label) => label.name === labelName
-                      // )?.id;
                       return (
                         <div
                           key={labelName}
@@ -543,13 +495,13 @@ function Main() {
                             {labelName}
                           </span>
                           <button
-                            className="absolute right-0 mr-1 focus:outline-none opacity-0 label-hover-child transition-opacity duration-200 bg-zinc-900 rounded-full"
+                            className="absolute right-0 mr-1 focus:outline-none opacity-0 label-hover-child transition-opacity duration-200 rounded-full text-black"
                             onClick={(e) => {
                               e.stopPropagation();
                               console.log("note.id", note.id);
-                              console.log("labelId", labelId);
                               console.log("labelsData", labelsData);
-                              // removeLabelFromNote(note.id, labelId);
+                              console.log(labelName);
+                              removeLabelFromNote(note.id, labelName);
                             }}
                           >
                             <svg
@@ -617,6 +569,7 @@ function Main() {
         labelsData={labelsData}
         onUpdateNote={updateNote}
         currentNoteLabelObjects={currentNoteLabelObjects}
+        onDeleteNote={deleteNote}
       />
     </div>
   );

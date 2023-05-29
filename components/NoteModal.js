@@ -12,8 +12,10 @@ const NoteModal = ({
   onUpdateNote,
   labelsData,
   currentNoteLabelObjects,
+  onDeleteNote,
 }) => {
   const { user } = useAuth();
+  // console.log(currentNoteLabelObjects);
 
   const [editedTitle, setEditedTitle] = useState("");
   const [editedContent, setEditedContent] = useState("");
@@ -22,6 +24,7 @@ const NoteModal = ({
   const [selectedLabels, setSelectedLabels] = useState(currentNoteLabelObjects);
   const [showLabelsModal, setShowLabelsModal] = useState(false);
   const [showLabelTooltip, setShowLabelTooltip] = useState(false);
+  const [showDeleteTooltip, setShowDeleteTooltip] = useState(false);
   const [initialLabels, setInitialLabels] = useState([]);
 
   const modalContainerRef = useRef();
@@ -124,6 +127,11 @@ const NoteModal = ({
     setShowNoteModal(false);
   };
 
+  const handleDeleteNote = () => {
+    onDeleteNote(currentNote.id);
+    setShowNoteModal(false);
+  };
+
   const handleClickOutside = (e) => {
     if (!modalContainerRef.current.contains(e.target)) {
       setEditedTitle(currentNote.title);
@@ -207,32 +215,75 @@ const NoteModal = ({
         </div>
         <div className="flex justify-between w-full">
           <div>
-            <button
-              className={`px-2 rounded-full hover:bg-zinc-100 ${
-                showLabelsModal ? "bg-zinc-100" : ""
-              }`}
-              onClick={() => setShowLabelsModal(!showLabelsModal)}
-              onMouseEnter={() => setShowLabelTooltip(true)}
-              onMouseLeave={() => setShowLabelTooltip(false)}
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
+            <div className="relative inline-block">
+              <button
+                className={`px-2 hover:text-green-500 ${
+                  showLabelsModal ? "bg-zinc-100" : ""
+                }`}
+                onClick={() => setShowLabelsModal(!showLabelsModal)}
+                onMouseEnter={() => setShowLabelTooltip(true)}
+                onMouseLeave={() => setShowLabelTooltip(false)}
               >
-                <path
-                  fill="currentColor"
-                  d="M12 19v-2h3l3.55-5L15 7H5v3H3V7q0-.825.588-1.413T5 5h10q.5 0 .938.225t.712.625L21 12l-4.35 6.15q-.275.4-.713.625T15 19h-3Zm-.225-7ZM5 20v-3H2v-2h3v-3h2v3h3v2H7v3H5Z"
-                />
-              </svg>
-            </button>
-            <div
-              className={`absolute py-1 px-2 text-xs text-white bg-zinc-700 rounded ${
-                showLabelTooltip ? "opacity-100" : "opacity-0"
-              } transition ease-in-out duration-200`}
-            >
-              Add Label
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    fill="currentColor"
+                    d="M12 19v-2h3l3.55-5L15 7H5v3H3V7q0-.825.588-1.413T5 5h10q.5 0 .938.225t.712.625L21 12l-4.35 6.15q-.275.4-.713.625T15 19h-3Zm-.225-7ZM5 20v-3H2v-2h3v-3h2v3h3v2H7v3H5Z"
+                  />
+                </svg>
+              </button>
+              <div
+                className={`absolute py-1 px-2 text-xs text-white bg-zinc-700 rounded ${
+                  showLabelTooltip ? "opacity-100" : "opacity-0"
+                } transition ease-in-out duration-200`}
+                style={{
+                  top: "100%",
+                  left: "50%",
+                  transform: "translateX(-50%)",
+                  marginTop: "4px",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                Add Label
+              </div>
+            </div>
+            <div className="relative inline-block ml-2">
+              <button
+                className="hover:text-red-500"
+                onClick={handleDeleteNote}
+                onMouseEnter={() => setShowDeleteTooltip(true)}
+                onMouseLeave={() => setShowDeleteTooltip(false)}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    fill="currentColor"
+                    d="M16 9v10H8V9h8m-1.5-6h-5l-1 1H5v2h14V4h-3.5l-1-1zM18 7H6v12c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7z"
+                  />
+                </svg>
+              </button>
+              <div
+                className={`absolute py-1 px-2 text-xs text-white bg-zinc-700 rounded ${
+                  showDeleteTooltip ? "opacity-100" : "opacity-0"
+                } transition ease-in-out duration-200`}
+                style={{
+                  top: "100%",
+                  left: "50%",
+                  transform: "translateX(-50%)",
+                  marginTop: "4px",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                Delete Note
+              </div>
             </div>
           </div>
           <div>
@@ -250,6 +301,7 @@ const NoteModal = ({
             </button>
           </div>
         </div>
+
         {showLabelsModal && (
           <div
             ref={modalLabelsRef}
