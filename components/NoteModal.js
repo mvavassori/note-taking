@@ -237,14 +237,14 @@ const NoteModal = ({
                 </svg>
               </button>
               <div
-                className={`absolute py-1 px-2 text-xs text-white bg-zinc-700 rounded ${
+                className={`absolute py-1 px-2 text-xs text-white bg-zinc-700 rounded pointer-events-none ${
                   showLabelTooltip ? "opacity-100" : "opacity-0"
                 } transition ease-in-out duration-200`}
                 style={{
                   top: "100%",
                   left: "50%",
                   transform: "translateX(-50%)",
-                  marginTop: "4px",
+                  marginTop: "0px",
                   whiteSpace: "nowrap",
                 }}
               >
@@ -271,14 +271,14 @@ const NoteModal = ({
                 </svg>
               </button>
               <div
-                className={`absolute py-1 px-2 text-xs text-white bg-zinc-700 rounded ${
+                className={`absolute py-1 px-2 text-xs text-white bg-zinc-700 rounded pointer-events-none ${
                   showDeleteTooltip ? "opacity-100" : "opacity-0"
                 } transition ease-in-out duration-200`}
                 style={{
                   top: "100%",
                   left: "50%",
                   transform: "translateX(-50%)",
-                  marginTop: "4px",
+                  marginTop: "0px",
                   whiteSpace: "nowrap",
                 }}
               >

@@ -41,7 +41,7 @@ const labelsConverter = {
   },
 };
 
-//used to get document ids of the labels
+//used to get document ids of the notes
 const notesConverter = {
   toFirestore(note) {
     return {
@@ -548,7 +548,7 @@ function Main() {
                   </button>
                   {/* Tooltip for Delete Note button */}
                   <span
-                    className={`absolute top-auto mt-3 right-0 bg-zinc-700 text-white text-xs px-2 py-1 rounded ${
+                    className={`absolute top-auto mt-3 -right-0.5 bg-zinc-700 text-white text-xs px-2 py-1 rounded pointer-events-none ${
                       activeTooltip === `deleteNote-${note.id}`
                         ? "opacity-100"
                         : "opacity-0"
