@@ -98,9 +98,6 @@ const Navbar = () => {
                   >
                     Account Settings
                   </button>
-                  <button className="text-left px-4 py-2 text-gray-700 hover:bg-gray-200 rounded focus:outline-none">
-                    Dark Theme
-                  </button>
                   <button
                     className="text-left px-4 py-2 text-gray-700 hover:bg-gray-200 rounded focus:outline-none"
                     onClick={handleSignOut}

@@ -15,7 +15,6 @@ const NoteModal = ({
   onDeleteNote,
 }) => {
   const { user } = useAuth();
-  // console.log(currentNoteLabelObjects);
 
   const [editedTitle, setEditedTitle] = useState("");
   const [editedContent, setEditedContent] = useState("");
